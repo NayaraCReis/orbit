@@ -1,0 +1,1110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ORBIT · EcoQuiz</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,200;0,9..144,400;0,9..144,700;1,9..144,200;1,9..144,400&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ink: #0f1409;
+  --bark: #1e2710;
+  --moss: #2e3d18;
+  --leaf: #4a6728;
+  --sage: #7a9e52;
+  --fern: #aac47a;
+  --mist: #d6e8b8;
+  --cream: #f4f0e4;
+  --paper: #faf7ee;
+  --gold: #c49a2a;
+  --amber: #e8b83a;
+  --sky: #5a9eaa;
+  --coral: #c4634a;
+  --warm: #e8d4b0;
+  --glow: rgba(170,196,122,0.12);
+  --line: rgba(74,103,40,0.2);
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: 'DM Mono', monospace;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Organic paper texture */
+body::before {
+  content:'';
+  position:fixed; inset:0;
+  background:
+    radial-gradient(ellipse 120% 80% at 10% 0%, rgba(214,232,184,0.3) 0%, transparent 50%),
+    radial-gradient(ellipse 80% 60% at 90% 100%, rgba(196,154,42,0.08) 0%, transparent 50%);
+  pointer-events:none; z-index:0;
+}
+
+/* ── SCREENS ── */
+.screen { display:none; position:relative; z-index:1; }
+.screen.active { display:flex; flex-direction:column; min-height:100vh; }
+
+/* ══════════════════════════════════
+   INTRO SCREEN
+══════════════════════════════════ */
+#intro {
+  align-items:center; justify-content:center;
+  padding:40px 24px; text-align:center;
+}
+
+.intro-orbit {
+  font-family:'Fraunces', serif;
+  font-size:11px; font-weight:400;
+  letter-spacing:0.4em; text-transform:uppercase;
+  color:var(--sage); margin-bottom:48px;
+  opacity:0; animation: riseIn 0.8s ease 0.2s forwards;
+}
+
+.intro-headline {
+  font-family:'Fraunces', serif;
+  font-size:clamp(52px,10vw,96px);
+  font-weight:200; line-height:0.92;
+  letter-spacing:-0.03em;
+  color:var(--ink);
+  opacity:0; animation: riseIn 0.9s ease 0.4s forwards;
+}
+.intro-headline em {
+  font-style:italic; color:var(--leaf);
+}
+
+.intro-sub {
+  margin-top:28px;
+  font-size:12px; line-height:1.9;
+  color:var(--moss); max-width:480px;
+  opacity:0; animation: riseIn 0.9s ease 0.7s forwards;
+}
+
+.intro-categories {
+  display:flex; flex-wrap:wrap; gap:8px;
+  justify-content:center; margin:32px 0 48px;
+  max-width:520px;
+  opacity:0; animation: riseIn 0.9s ease 0.9s forwards;
+}
+
+.cat-chip {
+  font-size:9px; letter-spacing:0.15em;
+  padding:5px 12px;
+  border:1px solid var(--line);
+  color:var(--leaf); background:var(--glow);
+  border-radius:2px;
+}
+
+.btn-start {
+  font-family:'DM Mono', monospace;
+  font-size:11px; letter-spacing:0.2em;
+  text-transform:uppercase;
+  padding:16px 48px;
+  background:var(--leaf); color:var(--cream);
+  border:none; cursor:pointer;
+  position:relative; overflow:hidden;
+  transition:all 0.3s ease;
+  opacity:0; animation: riseIn 0.9s ease 1.1s forwards;
+}
+.btn-start::after {
+  content:''; position:absolute;
+  inset:0; background:rgba(255,255,255,0.1);
+  transform:scaleX(0); transform-origin:left;
+  transition:transform 0.3s ease;
+}
+.btn-start:hover { background:var(--moss); transform:translateY(-2px); box-shadow:0 8px 24px rgba(46,61,24,0.25); }
+.btn-start:hover::after { transform:scaleX(1); }
+
+.intro-note {
+  margin-top:20px; font-size:9px;
+  letter-spacing:0.12em; color:var(--sage);
+  opacity:0; animation: riseIn 0.9s ease 1.3s forwards;
+}
+
+/* ══════════════════════════════════
+   QUIZ SCREEN
+══════════════════════════════════ */
+#quiz {
+  padding:0;
+}
+
+.quiz-header {
+  position:sticky; top:0; z-index:10;
+  background:rgba(250,247,238,0.95);
+  backdrop-filter:blur(10px);
+  border-bottom:1px solid var(--line);
+  padding:16px 32px;
+  display:flex; align-items:center; gap:20px;
+}
+
+.quiz-logo {
+  font-family:'Fraunces', serif;
+  font-size:18px; font-weight:200;
+  font-style:italic; color:var(--leaf);
+  flex-shrink:0;
+}
+
+.progress-wrap { flex:1; }
+
+.progress-meta {
+  display:flex; justify-content:space-between;
+  font-size:9px; letter-spacing:0.15em;
+  color:var(--sage); margin-bottom:6px;
+  text-transform:uppercase;
+}
+
+.progress-track {
+  height:3px; background:var(--mist); border-radius:2px; overflow:hidden;
+}
+.progress-fill {
+  height:100%; background:linear-gradient(to right, var(--leaf), var(--fern));
+  border-radius:2px; transition:width 0.6s cubic-bezier(0.4,0,0.2,1);
+}
+
+.quiz-body {
+  flex:1; display:flex;
+  flex-direction:column; align-items:center;
+  padding:60px 24px 40px;
+  max-width:680px; margin:0 auto; width:100%;
+}
+
+.q-category {
+  font-size:9px; letter-spacing:0.3em;
+  text-transform:uppercase; color:var(--gold);
+  margin-bottom:12px;
+  display:flex; align-items:center; gap:10px;
+}
+.q-category::before, .q-category::after {
+  content:''; display:block; height:1px;
+  width:40px; background:currentColor; opacity:0.4;
+}
+
+.q-number {
+  font-family:'Fraunces', serif;
+  font-size:120px; font-weight:200;
+  font-style:italic; line-height:1;
+  color:var(--mist);
+  position:absolute; right:-10px; top:-20px;
+  pointer-events:none; user-select:none;
+  z-index:0;
+}
+
+.q-wrap {
+  position:relative; width:100%;
+  opacity:0; transform:translateY(20px);
+  transition:opacity 0.5s ease, transform 0.5s ease;
+}
+.q-wrap.in { opacity:1; transform:translateY(0); }
+.q-wrap.out { opacity:0; transform:translateY(-20px); }
+
+.q-text {
+  font-family:'Fraunces', serif;
+  font-size:clamp(24px,4vw,36px);
+  font-weight:200; line-height:1.3;
+  color:var(--ink); margin-bottom:48px;
+  position:relative; z-index:1;
+  padding-right:60px;
+}
+
+.options {
+  display:flex; flex-direction:column; gap:10px;
+  width:100%;
+}
+
+.opt {
+  display:flex; align-items:flex-start; gap:16px;
+  padding:18px 24px;
+  border:1px solid var(--line);
+  background:white; cursor:pointer;
+  transition:all 0.25s ease;
+  position:relative; overflow:hidden;
+}
+.opt::before {
+  content:''; position:absolute; inset:0;
+  background:var(--glow);
+  transform:scaleX(0); transform-origin:left;
+  transition:transform 0.3s ease;
+}
+.opt:hover { border-color:var(--sage); }
+.opt:hover::before { transform:scaleX(1); }
+.opt.selected {
+  border-color:var(--leaf);
+  background:rgba(74,103,40,0.06);
+}
+.opt.selected .opt-score-dot { background:var(--leaf); }
+
+.opt-score-dot {
+  width:8px; height:8px; border-radius:50%;
+  border:1.5px solid var(--sage);
+  flex-shrink:0; margin-top:4px;
+  transition:background 0.2s ease;
+}
+
+.opt-content { position:relative; z-index:1; }
+.opt-label {
+  font-size:12px; line-height:1.6; color:var(--ink);
+}
+.opt-score {
+  font-size:9px; letter-spacing:0.1em;
+  color:var(--sage); margin-top:3px;
+}
+
+.q-nav {
+  display:flex; justify-content:space-between;
+  align-items:center; width:100%; margin-top:48px;
+}
+
+.btn-nav {
+  font-family:'DM Mono', monospace;
+  font-size:10px; letter-spacing:0.2em;
+  text-transform:uppercase; padding:12px 28px;
+  border:1px solid var(--line);
+  background:transparent; cursor:pointer;
+  color:var(--leaf); transition:all 0.2s ease;
+}
+.btn-nav:hover { background:var(--leaf); color:var(--cream); border-color:var(--leaf); }
+.btn-nav:disabled { opacity:0.3; cursor:default; }
+.btn-nav.primary {
+  background:var(--leaf); color:var(--cream);
+  border-color:var(--leaf);
+}
+.btn-nav.primary:hover { background:var(--moss); }
+
+.q-dots {
+  display:flex; gap:5px;
+}
+.q-dot {
+  width:5px; height:5px; border-radius:50%;
+  background:var(--mist); transition:all 0.3s ease;
+}
+.q-dot.done { background:var(--fern); }
+.q-dot.current { background:var(--leaf); transform:scale(1.4); }
+
+/* ══════════════════════════════════
+   RESULTS SCREEN
+══════════════════════════════════ */
+#results {
+  padding:60px 24px;
+  align-items:center;
+}
+
+.results-inner {
+  max-width:780px; width:100%; margin:0 auto;
+}
+
+.results-header {
+  text-align:center; margin-bottom:60px;
+}
+
+.results-level {
+  display:inline-block;
+  font-size:9px; letter-spacing:0.3em;
+  text-transform:uppercase; padding:6px 16px;
+  border:1px solid currentColor;
+  margin-bottom:20px;
+}
+
+.results-score-big {
+  font-family:'Fraunces', serif;
+  font-size:clamp(80px,15vw,140px);
+  font-weight:200; line-height:1;
+  letter-spacing:-0.03em;
+}
+
+.results-score-sub {
+  font-size:11px; letter-spacing:0.15em;
+  color:var(--sage); margin-top:8px;
+}
+
+.results-title {
+  font-family:'Fraunces', serif;
+  font-size:clamp(28px,5vw,44px);
+  font-weight:200; font-style:italic;
+  margin:16px 0 12px;
+}
+
+.results-desc {
+  font-size:12px; line-height:1.9;
+  color:var(--moss); max-width:520px;
+  margin:0 auto;
+}
+
+/* Radar chart */
+.radar-wrap {
+  display:flex; justify-content:center;
+  margin:48px 0;
+}
+
+canvas#radar {
+  max-width:420px; max-height:420px;
+}
+
+/* Category breakdown */
+.breakdown {
+  display:grid; grid-template-columns:repeat(3,1fr);
+  gap:2px; margin:48px 0;
+}
+@media(max-width:600px){ .breakdown { grid-template-columns:1fr 1fr; } }
+
+.breakdown-cell {
+  padding:20px 16px;
+  border:1px solid var(--line);
+  background:white;
+  transition:all 0.3s ease;
+}
+.breakdown-cell:hover { background:var(--glow); border-color:var(--sage); }
+
+.bc-cat {
+  font-size:9px; letter-spacing:0.2em;
+  text-transform:uppercase; color:var(--sage);
+  margin-bottom:8px;
+}
+.bc-icon { font-size:22px; margin-bottom:8px; display:block; }
+
+.bc-bar-track {
+  height:2px; background:var(--mist);
+  margin:8px 0 6px; border-radius:1px; overflow:hidden;
+}
+.bc-bar-fill {
+  height:100%; border-radius:1px;
+  background:linear-gradient(to right, var(--leaf), var(--fern));
+  width:0; transition:width 1.2s cubic-bezier(0.4,0,0.2,1);
+}
+
+.bc-score {
+  font-family:'Fraunces', serif;
+  font-size:20px; font-weight:200; color:var(--ink);
+}
+.bc-max { font-size:10px; color:var(--sage); }
+
+/* Action links */
+.action-section {
+  margin:48px 0;
+  border-top:1px solid var(--line);
+  padding-top:48px;
+}
+
+.action-title {
+  font-family:'Fraunces', serif;
+  font-size:clamp(22px,4vw,32px);
+  font-weight:200; margin-bottom:8px;
+}
+.action-sub {
+  font-size:11px; color:var(--sage); margin-bottom:32px;
+  letter-spacing:0.05em;
+}
+
+.action-grid {
+  display:grid; grid-template-columns:repeat(3,1fr);
+  gap:2px;
+}
+@media(max-width:600px){ .action-grid { grid-template-columns:1fr; } }
+
+.action-card {
+  padding:24px 20px;
+  border:1px solid var(--line);
+  background:white; text-decoration:none;
+  display:block; transition:all 0.3s ease;
+  position:relative; overflow:hidden;
+}
+.action-card::after {
+  content:'↗'; position:absolute;
+  top:16px; right:16px;
+  font-size:14px; color:var(--mist);
+  transition:all 0.3s ease;
+}
+.action-card:hover { border-color:var(--leaf); background:rgba(74,103,40,0.04); }
+.action-card:hover::after { color:var(--leaf); transform:translate(2px,-2px); }
+
+.ac-icon { font-size:24px; display:block; margin-bottom:12px; }
+.ac-cat {
+  font-size:9px; letter-spacing:0.2em;
+  text-transform:uppercase; color:var(--gold);
+  margin-bottom:6px;
+}
+.ac-title {
+  font-family:'Fraunces', serif;
+  font-size:16px; font-weight:200; color:var(--ink);
+  margin-bottom:6px; line-height:1.3;
+}
+.ac-score {
+  font-size:9px; color:var(--sage);
+  letter-spacing:0.1em;
+}
+
+/* EcoWallet CTA */
+.wallet-cta {
+  margin:48px 0 0;
+  padding:48px;
+  background:var(--bark);
+  color:var(--cream);
+  text-align:center;
+}
+
+.wallet-cta-eyebrow {
+  font-size:9px; letter-spacing:0.3em;
+  text-transform:uppercase; color:var(--fern);
+  margin-bottom:20px;
+}
+
+.wallet-cta-title {
+  font-family:'Fraunces', serif;
+  font-size:clamp(28px,5vw,44px);
+  font-weight:200; font-style:italic;
+  color:var(--cream); line-height:1.2;
+  margin-bottom:16px;
+}
+
+.wallet-cta-desc {
+  font-size:11px; line-height:1.9;
+  color:rgba(214,232,184,0.7);
+  max-width:480px; margin:0 auto 32px;
+}
+
+.wallet-btns {
+  display:flex; gap:12px;
+  justify-content:center; flex-wrap:wrap;
+}
+
+.btn-wallet {
+  font-family:'DM Mono', monospace;
+  font-size:10px; letter-spacing:0.2em;
+  text-transform:uppercase; padding:14px 32px;
+  cursor:pointer; border:none; transition:all 0.3s ease;
+}
+.btn-wallet.primary {
+  background:var(--fern); color:var(--bark);
+}
+.btn-wallet.primary:hover { background:var(--mist); }
+.btn-wallet.secondary {
+  background:transparent;
+  border:1px solid rgba(170,196,122,0.4);
+  color:var(--fern);
+}
+.btn-wallet.secondary:hover {
+  border-color:var(--fern); background:rgba(170,196,122,0.08);
+}
+
+/* ── ANIMATIONS ── */
+@keyframes riseIn {
+  from { opacity:0; transform:translateY(20px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+
+/* Category colour map */
+.level-high   { color:var(--leaf); border-color:var(--leaf); }
+.level-mod    { color:var(--gold); border-color:var(--gold); }
+.level-low    { color:var(--coral); border-color:var(--coral); }
+.score-high   { color:var(--leaf); }
+.score-mod    { color:var(--gold); }
+.score-low    { color:var(--coral); }
+
+/* Transition overlay */
+.transition-flash {
+  position:fixed; inset:0;
+  background:var(--fern);
+  opacity:0; pointer-events:none;
+  z-index:999;
+  transition:opacity 0.25s ease;
+}
+.transition-flash.flash { opacity:0.08; }
+</style>
+</head>
+<body>
+
+<div class="transition-flash" id="flash"></div>
+
+<!-- ══ INTRO ══ -->
+<div class="screen active" id="intro">
+  <div class="intro-orbit">ORBIT · EcoQuiz · 2026</div>
+
+  <h1 class="intro-headline">
+    Know your<br><em>eco resonance</em>
+  </h1>
+
+  <p class="intro-sub">
+    18 questions across 9 dimensions of your daily life.<br>
+    Honest answers take about 3 minutes.<br>
+    Your score unlocks your personalised behaviour journey<br>and your EcoWallet tier.
+  </p>
+
+  <div class="intro-categories">
+    <span class="cat-chip">🌿 Mind &amp; Body</span>
+    <span class="cat-chip">🏢 Where I Work</span>
+    <span class="cat-chip">👗 What I Wear</span>
+    <span class="cat-chip">🏡 Where I Live</span>
+    <span class="cat-chip">✈️ How I Travel</span>
+    <span class="cat-chip">❤️ Who I Care For</span>
+    <span class="cat-chip">🛍️ What I Buy</span>
+    <span class="cat-chip">🥗 What I Eat</span>
+    <span class="cat-chip">🗳️ How I Vote</span>
+  </div>
+
+  <button class="btn-start" onclick="startQuiz()">Begin the quiz</button>
+  <p class="intro-note">No data stored · No account required · Pure signal</p>
+</div>
+
+<!-- ══ QUIZ ══ -->
+<div class="screen" id="quiz">
+  <div class="quiz-header">
+    <div class="quiz-logo">ORBIT</div>
+    <div class="progress-wrap">
+      <div class="progress-meta">
+        <span id="progressLabel">Question 1 of 18</span>
+        <span id="categoryLabel">Mind &amp; Body</span>
+      </div>
+      <div class="progress-track">
+        <div class="progress-fill" id="progressFill" style="width:5%"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="quiz-body">
+    <div class="q-wrap" id="qWrap">
+      <div class="q-number" id="qNumber">01</div>
+      <div class="q-category" id="qCategory">Mind &amp; Body</div>
+      <div class="q-text" id="qText"></div>
+      <div class="options" id="options"></div>
+    </div>
+
+    <div class="q-nav">
+      <button class="btn-nav" id="btnBack" onclick="prevQ()" disabled>← Back</button>
+      <div class="q-dots" id="qDots"></div>
+      <button class="btn-nav primary" id="btnNext" onclick="nextQ()" disabled>Next →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ RESULTS ══ -->
+<div class="screen" id="results">
+  <div class="results-inner">
+    <div class="results-header">
+      <div class="results-level" id="resLevel"></div>
+      <div class="results-score-big" id="resScore"></div>
+      <div class="results-score-sub">out of 54 possible points</div>
+      <div class="results-title" id="resTitle"></div>
+      <p class="results-desc" id="resDesc"></p>
+    </div>
+
+    <div class="radar-wrap">
+      <canvas id="radar" width="420" height="420"></canvas>
+    </div>
+
+    <div class="breakdown" id="breakdown"></div>
+
+    <div class="action-section">
+      <div class="action-title">Your focus areas</div>
+      <div class="action-sub">The three dimensions where small actions have the most impact for you.</div>
+      <div class="action-grid" id="actionGrid"></div>
+    </div>
+
+    <div class="wallet-cta">
+      <div class="wallet-cta-eyebrow">Your EcoWallet awaits</div>
+      <div class="wallet-cta-title">Turn your score into<br>real circular impact</div>
+      <p class="wallet-cta-desc">
+        Connect your Re-turn deposits to your EcoWallet and start earning credits for qualifying purchases — local, organic, plant-based, and package-free.
+      </p>
+      <div class="wallet-btns">
+        <button class="btn-wallet primary">Activate EcoWallet</button>
+        <button class="btn-wallet secondary" onclick="retake()">Retake quiz</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── DATA ──────────────────────────────────────────────────
+const QUESTIONS = [
+  {
+    id:1, cat:'Mind & Body', icon:'🌿',
+    text:'How often do you spend intentional time in nature each week?',
+    url:'https://actnowcollective.org/mind-and-body/',
+    opts:[
+      {label:'Rarely or never — I don\'t make time for it', score:0},
+      {label:'Occasionally — a walk here and there', score:1},
+      {label:'Regularly — a few times a week', score:2},
+      {label:'It\'s a core part of my week — most days', score:3},
+    ]
+  },
+  {
+    id:2, cat:'Mind & Body', icon:'🌿',
+    text:'Do you reduce car trips by walking or cycling instead?',
+    url:'https://actnowcollective.org/mind-and-body/',
+    opts:[
+      {label:'No — I rely on my car for almost everything', score:0},
+      {label:'Sometimes, for short distances', score:1},
+      {label:'Yes, regularly for errands and commutes', score:2},
+      {label:'Almost always — it\'s my default way to move', score:3},
+    ]
+  },
+  {
+    id:3, cat:'Where I Work / Learn', icon:'🏢',
+    text:'Does your workplace or school have active recycling or sustainability policies?',
+    url:'https://actnowcollective.org/where-i-work-learn/',
+    opts:[
+      {label:'Not that I know of', score:0},
+      {label:'There are policies but no one really follows them', score:1},
+      {label:'Yes, and I participate in them', score:2},
+      {label:'Yes, and I help champion them or have pushed for them', score:3},
+    ]
+  },
+  {
+    id:4, cat:'Where I Work / Learn', icon:'🏢',
+    text:'Do you bring your own reusable cup or bottle to work or study?',
+    url:'https://actnowcollective.org/where-i-work-learn/',
+    opts:[
+      {label:'No — I use disposable cups daily', score:0},
+      {label:'Sometimes, when I remember', score:1},
+      {label:'Most of the time', score:2},
+      {label:'Always — disposable cups are not an option for me', score:3},
+    ]
+  },
+  {
+    id:5, cat:'What I Wear', icon:'👗',
+    text:'How often do you buy clothes second-hand or from sustainable brands?',
+    url:'https://actnowcollective.org/what-i-wear/',
+    opts:[
+      {label:'Never — I mainly buy fast fashion', score:0},
+      {label:'Occasionally — I\'ve tried it a few times', score:1},
+      {label:'Regularly — it\'s part of how I shop', score:2},
+      {label:'Almost always — second-hand is my first choice', score:3},
+    ]
+  },
+  {
+    id:6, cat:'What I Wear', icon:'👗',
+    text:'Do you repair, upcycle, or repurpose clothes instead of discarding them?',
+    url:'https://actnowcollective.org/what-i-wear/',
+    opts:[
+      {label:'No — worn out means thrown out', score:0},
+      {label:'Rarely — only if it\'s very simple', score:1},
+      {label:'Sometimes — I have repaired things before', score:2},
+      {label:'Yes, regularly — I see it as a creative practice', score:3},
+    ]
+  },
+  {
+    id:7, cat:'Where I Live', icon:'🏡',
+    text:'Do you compost organic waste or recycle consistently at home?',
+    url:'https://actnowcollective.org/where-i-live/',
+    opts:[
+      {label:'No — everything goes in the same bin', score:0},
+      {label:'I recycle some things but it\'s inconsistent', score:1},
+      {label:'Yes, I recycle regularly', score:2},
+      {label:'Yes — I compost and sort waste carefully', score:3},
+    ]
+  },
+  {
+    id:8, cat:'Where I Live', icon:'🏡',
+    text:'Is your home reasonably energy efficient — insulation, LED lighting, low-energy appliances?',
+    url:'https://actnowcollective.org/where-i-live/',
+    opts:[
+      {label:'No, and I\'ve never really thought about it', score:0},
+      {label:'A little — some LED bulbs perhaps', score:1},
+      {label:'Moderately — I\'ve made several improvements', score:2},
+      {label:'Yes — I\'ve actively upgraded or chosen energy efficiency', score:3},
+    ]
+  },
+  {
+    id:9, cat:'How I Travel', icon:'✈️',
+    text:'What is your primary mode of daily travel?',
+    url:'https://actnowcollective.org/how-i-travel/',
+    opts:[
+      {label:'Car, alone, most of the time', score:0},
+      {label:'Car but I carpool or combine trips', score:1},
+      {label:'Mostly public transport', score:2},
+      {label:'Walking, cycling, or public transport almost entirely', score:3},
+    ]
+  },
+  {
+    id:10, cat:'How I Travel', icon:'✈️',
+    text:'How many return flights do you take in a typical year?',
+    url:'https://actnowcollective.org/how-i-travel/',
+    opts:[
+      {label:'More than 4 — I fly frequently', score:0},
+      {label:'3–4 per year', score:1},
+      {label:'1–2 per year', score:2},
+      {label:'Zero or near-zero — I avoid flying when I can', score:3},
+    ]
+  },
+  {
+    id:11, cat:'Who I Care For', icon:'❤️',
+    text:'Do you actively share eco-friendly practices or information with family and friends?',
+    url:'https://actnowcollective.org/who-i-care-for/',
+    opts:[
+      {label:'No — I keep my choices to myself', score:0},
+      {label:'Rarely — only if it comes up in conversation', score:1},
+      {label:'Sometimes — I share when I see an opportunity', score:2},
+      {label:'Yes, regularly — it feels important to bring others along', score:3},
+    ]
+  },
+  {
+    id:12, cat:'Who I Care For', icon:'❤️',
+    text:'Do you participate in community sustainability initiatives or local environmental groups?',
+    url:'https://actnowcollective.org/who-i-care-for/',
+    opts:[
+      {label:'No, not at all', score:0},
+      {label:'I\'m aware of some but haven\'t joined', score:1},
+      {label:'Yes, occasionally', score:2},
+      {label:'Yes, actively — it\'s part of my community identity', score:3},
+    ]
+  },
+  {
+    id:13, cat:'What I Buy', icon:'🛍️',
+    text:'How often do you consciously buy local or Irish-made products?',
+    url:'https://actnowcollective.org/what-i-buy/',
+    opts:[
+      {label:'Rarely — price and convenience come first', score:0},
+      {label:'Sometimes, when it\'s easy to spot', score:1},
+      {label:'Often — I look for local options', score:2},
+      {label:'Almost always — it\'s a consistent value for me', score:3},
+    ]
+  },
+  {
+    id:14, cat:'What I Buy', icon:'🛍️',
+    text:'Do you actively avoid single-use plastics in your shopping habits?',
+    url:'https://actnowcollective.org/what-i-buy/',
+    opts:[
+      {label:'No — I don\'t really think about packaging', score:0},
+      {label:'A little — I bring a reusable bag sometimes', score:1},
+      {label:'Yes — I avoid obvious single-use items', score:2},
+      {label:'Very actively — I seek package-free and bulk options', score:3},
+    ]
+  },
+  {
+    id:15, cat:'What I Eat', icon:'🥗',
+    text:'How plant-based is your diet on a typical week?',
+    url:'https://actnowcollective.org/what-i-eat/',
+    opts:[
+      {label:'Mostly meat and dairy at most meals', score:0},
+      {label:'Meat or dairy most days but not every meal', score:1},
+      {label:'Flexitarian — plant-based most of the time', score:2},
+      {label:'Mostly or fully plant-based', score:3},
+    ]
+  },
+  {
+    id:16, cat:'What I Eat', icon:'🥗',
+    text:'How well do you manage your household food waste?',
+    url:'https://actnowcollective.org/what-i-eat/',
+    opts:[
+      {label:'I throw away food regularly', score:0},
+      {label:'Some waste but I try not to overbuy', score:1},
+      {label:'I plan meals and rarely waste food', score:2},
+      {label:'Near-zero waste — I use everything including scraps', score:3},
+    ]
+  },
+  {
+    id:17, cat:'How I Vote', icon:'🗳️',
+    text:'Do you consider a candidate\'s climate and environmental position when voting?',
+    url:'https://actnowcollective.org/how-i-vote/',
+    opts:[
+      {label:'No — climate is not a deciding factor for me', score:0},
+      {label:'It\'s one of many factors I consider', score:1},
+      {label:'It\'s a significant factor in my decisions', score:2},
+      {label:'It\'s one of the most important factors — it\'s non-negotiable', score:3},
+    ]
+  },
+  {
+    id:18, cat:'How I Vote', icon:'🗳️',
+    text:'Do you sign petitions, contact your representatives, or take civic action on climate?',
+    url:'https://actnowcollective.org/how-i-vote/',
+    opts:[
+      {label:'No — I don\'t engage in that way', score:0},
+      {label:'Rarely — maybe signed something once or twice', score:1},
+      {label:'Sometimes — when an issue feels urgent', score:2},
+      {label:'Yes, regularly — I see civic action as part of my responsibility', score:3},
+    ]
+  },
+];
+
+const CATEGORY_ICONS = {
+  'Mind & Body':'🌿','Where I Work / Learn':'🏢','What I Wear':'👗',
+  'Where I Live':'🏡','How I Travel':'✈️','Who I Care For':'❤️',
+  'What I Buy':'🛍️','What I Eat':'🥗','How I Vote':'🗳️'
+};
+
+const LEVELS = {
+  high:  { label:'High Resonance', min:40, title:'You\'re already living it',
+    desc:'Your daily choices reflect deep ecological alignment. ORBIT wants to amplify what you already do — connecting your actions to community impact and making your values visible in the circular economy.' },
+  mod:   { label:'Moderate Resonance', min:22, title:'You\'re on the path',
+    desc:'You have strong foundations and clear values — and real room to grow. ORBIT\'s personalised behaviour journey will help you turn occasional good choices into consistent ones, and show you where small changes have the biggest impact.' },
+  low:   { label:'Growing Resonance', min:0, title:'Every journey starts here',
+    desc:'Awareness is the first act of change. The fact that you took this quiz means something. ORBIT\'s role is to meet you exactly where you are — making the sustainable choice the easy choice, one small step at a time.' }
+};
+
+// ── STATE ──
+let current = 0;
+let answers = new Array(18).fill(null);
+
+// ── INIT ──
+function startQuiz() {
+  flash();
+  setTimeout(() => {
+    switchScreen('quiz');
+    buildDots();
+    renderQ(0);
+  }, 300);
+}
+
+function flash() {
+  const f = document.getElementById('flash');
+  f.classList.add('flash');
+  setTimeout(() => f.classList.remove('flash'), 400);
+}
+
+function switchScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0,0);
+}
+
+function buildDots() {
+  const wrap = document.getElementById('qDots');
+  wrap.innerHTML = '';
+  QUESTIONS.forEach((_, i) => {
+    const d = document.createElement('div');
+    d.className = 'q-dot' + (i===0?' current':'');
+    d.id = 'dot'+i;
+    wrap.appendChild(d);
+  });
+}
+
+function renderQ(idx, dir='in') {
+  const q = QUESTIONS[idx];
+  const wrap = document.getElementById('qWrap');
+
+  wrap.classList.remove('in','out');
+  void wrap.offsetWidth;
+  wrap.classList.add(dir==='in'?'in':'out');
+
+  document.getElementById('qNumber').textContent = String(idx+1).padStart(2,'0');
+  document.getElementById('qCategory').textContent = q.cat;
+  document.getElementById('qText').textContent = q.text;
+  document.getElementById('progressLabel').textContent = `Question ${idx+1} of 18`;
+  document.getElementById('categoryLabel').textContent = q.cat;
+  document.getElementById('progressFill').style.width = `${Math.round(((idx)/18)*100)+5}%`;
+
+  // Dots
+  document.querySelectorAll('.q-dot').forEach((d,i) => {
+    d.className = 'q-dot' + (i<idx?' done': i===idx?' current':'');
+  });
+
+  // Options
+  const optWrap = document.getElementById('options');
+  optWrap.innerHTML = '';
+  q.opts.forEach((o, oi) => {
+    const div = document.createElement('div');
+    div.className = 'opt' + (answers[idx]===oi?' selected':'');
+    div.innerHTML = `
+      <div class="opt-score-dot"></div>
+      <div class="opt-content">
+        <div class="opt-label">${o.label}</div>
+        <div class="opt-score">${['No action','Some awareness','Regular practice','Leading by example'][oi]}</div>
+      </div>`;
+    div.onclick = () => selectOpt(idx, oi);
+    optWrap.appendChild(div);
+  });
+
+  document.getElementById('btnBack').disabled = idx===0;
+  document.getElementById('btnNext').disabled = answers[idx]===null;
+  document.getElementById('btnNext').textContent = idx===17 ? 'See my results →' : 'Next →';
+}
+
+function selectOpt(qIdx, oIdx) {
+  answers[qIdx] = oIdx;
+  document.querySelectorAll('.opt').forEach((el,i) => {
+    el.classList.toggle('selected', i===oIdx);
+  });
+  document.getElementById('btnNext').disabled = false;
+}
+
+function nextQ() {
+  if(answers[current]===null) return;
+  if(current===17) { showResults(); return; }
+  const wrap = document.getElementById('qWrap');
+  wrap.classList.add('out'); wrap.classList.remove('in');
+  setTimeout(() => { current++; renderQ(current); }, 250);
+}
+
+function prevQ() {
+  if(current===0) return;
+  const wrap = document.getElementById('qWrap');
+  wrap.classList.add('out'); wrap.classList.remove('in');
+  setTimeout(() => { current--; renderQ(current); }, 250);
+}
+
+// ── RESULTS ──
+function showResults() {
+  flash();
+  setTimeout(() => {
+    switchScreen('results');
+    computeResults();
+  }, 300);
+}
+
+function computeResults() {
+  // Total score
+  const total = answers.reduce((sum, a, i) => sum + (a!==null ? QUESTIONS[i].opts[a].score : 0), 0);
+
+  // Category scores
+  const catScores = {};
+  const catCounts = {};
+  QUESTIONS.forEach((q, i) => {
+    const cat = q.cat;
+    if(!catScores[cat]) { catScores[cat]=0; catCounts[cat]=0; }
+    catScores[cat] += answers[i]!==null ? q.opts[answers[i]].score : 0;
+    catCounts[cat]++;
+  });
+
+  // Level
+  const pct = total/54;
+  const level = pct>=0.74?'high': pct>=0.41?'mod':'low';
+  const lv = LEVELS[level];
+
+  // Render header
+  document.getElementById('resLevel').textContent = lv.label;
+  document.getElementById('resLevel').className = 'results-level level-'+level;
+  document.getElementById('resScore').textContent = total;
+  document.getElementById('resScore').className = 'results-score-big score-'+level;
+  document.getElementById('resTitle').textContent = lv.title;
+  document.getElementById('resDesc').textContent = lv.desc;
+
+  // Breakdown grid
+  const bdWrap = document.getElementById('breakdown');
+  bdWrap.innerHTML = '';
+  Object.entries(catScores).forEach(([cat, score]) => {
+    const max = catCounts[cat]*3;
+    const pctCat = score/max;
+    const cell = document.createElement('div');
+    cell.className = 'breakdown-cell';
+    cell.innerHTML = `
+      <span class="bc-icon">${CATEGORY_ICONS[cat]||'🌱'}</span>
+      <div class="bc-cat">${cat}</div>
+      <div class="bc-bar-track"><div class="bc-bar-fill" style="--tw:${Math.round(pctCat*100)}%"></div></div>
+      <span class="bc-score">${score}</span><span class="bc-max"> / ${max}</span>
+    `;
+    bdWrap.appendChild(cell);
+  });
+
+  // Animate bars after short delay
+  setTimeout(() => {
+    document.querySelectorAll('.bc-bar-fill').forEach(b => {
+      b.style.width = b.style.getPropertyValue('--tw') || '0%';
+    });
+  }, 400);
+
+  // Radar
+  drawRadar(catScores, catCounts);
+
+  // Action grid — 3 lowest scoring cats
+  const sorted = Object.entries(catScores)
+    .map(([cat,score]) => ({cat, score, max:catCounts[cat]*3, pct:score/(catCounts[cat]*3), url: QUESTIONS.find(q=>q.cat===cat).url}))
+    .sort((a,b)=>a.pct-b.pct)
+    .slice(0,3);
+
+  const ag = document.getElementById('actionGrid');
+  ag.innerHTML = '';
+  sorted.forEach(({cat,score,max,url}) => {
+    const a = document.createElement('a');
+    a.href = url; a.target='_blank'; a.rel='noopener noreferrer';
+    a.className='action-card';
+    a.innerHTML=`
+      <span class="ac-icon">${CATEGORY_ICONS[cat]||'🌱'}</span>
+      <div class="ac-cat">Explore resources</div>
+      <div class="ac-title">${cat}</div>
+      <div class="ac-score">Scored ${score} / ${max} · Tap to explore Act Now resources</div>
+    `;
+    ag.appendChild(a);
+  });
+}
+
+function drawRadar(catScores, catCounts) {
+  const canvas = document.getElementById('radar');
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  const cx = W/2, cy = H/2;
+  const R = Math.min(W,H)/2 - 60;
+
+  const cats = Object.keys(catScores);
+  const N = cats.length;
+  const vals = cats.map(c => catScores[c]/(catCounts[c]*3));
+
+  ctx.clearRect(0,0,W,H);
+
+  // Grid rings
+  [0.25,0.5,0.75,1].forEach(r => {
+    ctx.beginPath();
+    for(let i=0;i<N;i++){
+      const a = (i/N)*Math.PI*2 - Math.PI/2;
+      const x = cx + Math.cos(a)*R*r;
+      const y = cy + Math.sin(a)*R*r;
+      i===0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
+    }
+    ctx.closePath();
+    ctx.strokeStyle = 'rgba(74,103,40,0.12)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  });
+
+  // Spokes
+  cats.forEach((_,i) => {
+    const a = (i/N)*Math.PI*2 - Math.PI/2;
+    ctx.beginPath();
+    ctx.moveTo(cx,cy);
+    ctx.lineTo(cx+Math.cos(a)*R, cy+Math.sin(a)*R);
+    ctx.strokeStyle = 'rgba(74,103,40,0.15)';
+    ctx.lineWidth=1; ctx.stroke();
+  });
+
+  // Data polygon
+  ctx.beginPath();
+  vals.forEach((v,i) => {
+    const a = (i/N)*Math.PI*2 - Math.PI/2;
+    const x = cx + Math.cos(a)*R*v;
+    const y = cy + Math.sin(a)*R*v;
+    i===0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
+  });
+  ctx.closePath();
+  ctx.fillStyle = 'rgba(74,103,40,0.18)';
+  ctx.fill();
+  ctx.strokeStyle = '#4a6728';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  // Points
+  vals.forEach((v,i) => {
+    const a = (i/N)*Math.PI*2 - Math.PI/2;
+    const x = cx + Math.cos(a)*R*v;
+    const y = cy + Math.sin(a)*R*v;
+    ctx.beginPath();
+    ctx.arc(x,y,4,0,Math.PI*2);
+    ctx.fillStyle = '#4a6728'; ctx.fill();
+  });
+
+  // Labels
+  ctx.font = '10px "DM Mono", monospace';
+  ctx.fillStyle = '#7a9e52';
+  ctx.textAlign = 'center';
+  cats.forEach((cat,i) => {
+    const a = (i/N)*Math.PI*2 - Math.PI/2;
+    const labelR = R + 36;
+    const x = cx + Math.cos(a)*labelR;
+    const y = cy + Math.sin(a)*labelR + 4;
+    const icon = CATEGORY_ICONS[cat]||'🌱';
+    ctx.fillText(icon, x, y);
+  });
+}
+
+function retake() {
+  answers = new Array(18).fill(null);
+  current = 0;
+  flash();
+  setTimeout(() => {
+    switchScreen('intro');
+  }, 300);
+}
+</script>
+</body>
+</html>

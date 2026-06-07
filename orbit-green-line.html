@@ -1,0 +1,884 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ORBIT — Green Line System Map</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,600;1,9..144,300&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --soil: #1a1a14;
+    --moss: #2d3a1e;
+    --leaf: #4a6741;
+    --sage: #7a9e6e;
+    --fern: #a8c49a;
+    --mist: #d4e8cc;
+    --cream: #f0ede4;
+    --gold: #c8a84b;
+    --amber: #e8b84b;
+    --sky: #7eb8c4;
+    --coral: #d4735a;
+    --line: rgba(168,196,154,0.25);
+    --glow: rgba(168,196,154,0.08);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--soil);
+    color: var(--cream);
+    font-family: 'DM Mono', monospace;
+    overflow-x: hidden;
+    cursor: crosshair;
+  }
+
+  /* Organic background texture */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: 
+      radial-gradient(ellipse 80% 60% at 20% 10%, rgba(45,58,30,0.6) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 80% at 80% 90%, rgba(26,26,20,0.8) 0%, transparent 50%),
+      radial-gradient(ellipse 40% 40% at 60% 30%, rgba(74,103,65,0.15) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* Grain overlay */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    opacity: 0.4;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    position: relative;
+    z-index: 1;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 60px 40px;
+  }
+
+  /* HEADER */
+  .header {
+    text-align: center;
+    margin-bottom: 80px;
+    opacity: 0;
+    animation: fadeUp 1s ease 0.2s forwards;
+  }
+
+  .header-eyebrow {
+    font-size: 10px;
+    letter-spacing: 0.3em;
+    color: var(--sage);
+    text-transform: uppercase;
+    margin-bottom: 16px;
+  }
+
+  .header h1 {
+    font-family: 'Fraunces', serif;
+    font-size: clamp(48px, 8vw, 88px);
+    font-weight: 300;
+    line-height: 0.95;
+    color: var(--cream);
+    letter-spacing: -0.02em;
+  }
+
+  .header h1 em {
+    font-style: italic;
+    color: var(--fern);
+  }
+
+  .header-sub {
+    margin-top: 20px;
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    color: var(--sage);
+    opacity: 0.7;
+  }
+
+  /* GREEN LINE — the spine */
+  .green-line {
+    position: relative;
+    margin: 0 auto;
+  }
+
+  .spine {
+    position: absolute;
+    left: 50%;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: linear-gradient(to bottom, 
+      transparent,
+      var(--leaf) 5%,
+      var(--sage) 40%,
+      var(--fern) 70%,
+      var(--gold) 90%,
+      transparent
+    );
+    transform: translateX(-50%);
+  }
+
+  .spine::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 0;
+    bottom: 0;
+    width: 1px;
+    background: inherit;
+    filter: blur(6px);
+    transform: translateX(-50%);
+    opacity: 0.5;
+  }
+
+  /* PHASE NODES */
+  .phase {
+    display: grid;
+    grid-template-columns: 1fr 60px 1fr;
+    align-items: start;
+    gap: 0;
+    margin-bottom: 0;
+    opacity: 0;
+    transform: translateY(30px);
+    transition: opacity 0.7s ease, transform 0.7s ease;
+  }
+
+  .phase.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .phase:nth-child(odd) .phase-content { grid-column: 1; text-align: right; padding-right: 40px; }
+  .phase:nth-child(odd) .phase-node { grid-column: 2; }
+  .phase:nth-child(odd) .phase-detail { grid-column: 3; padding-left: 40px; }
+
+  .phase:nth-child(even) .phase-content { grid-column: 3; text-align: left; padding-left: 40px; order: 3; }
+  .phase:nth-child(even) .phase-node { grid-column: 2; order: 2; }
+  .phase:nth-child(even) .phase-detail { grid-column: 1; text-align: right; padding-right: 40px; order: 1; }
+
+  .phase-node {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px 0;
+    position: relative;
+    z-index: 2;
+  }
+
+  .node-dot {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 2px solid var(--sage);
+    background: var(--soil);
+    position: relative;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    flex-shrink: 0;
+  }
+
+  .node-dot::before {
+    content: '';
+    position: absolute;
+    inset: 3px;
+    border-radius: 50%;
+    background: var(--sage);
+    transition: all 0.3s ease;
+  }
+
+  .node-dot:hover {
+    border-color: var(--fern);
+    box-shadow: 0 0 20px rgba(168,196,154,0.4);
+    transform: scale(1.4);
+  }
+
+  .node-dot:hover::before { background: var(--fern); }
+
+  .phase-label {
+    font-size: 9px;
+    letter-spacing: 0.2em;
+    color: var(--leaf);
+    text-transform: uppercase;
+    margin-top: 8px;
+    white-space: nowrap;
+  }
+
+  /* CONTENT CARDS */
+  .phase-content {
+    padding-top: 12px;
+    padding-bottom: 40px;
+  }
+
+  .phase-tag {
+    font-size: 9px;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 8px;
+    display: block;
+  }
+
+  .phase-title {
+    font-family: 'Fraunces', serif;
+    font-size: clamp(20px, 3vw, 28px);
+    font-weight: 300;
+    color: var(--cream);
+    line-height: 1.2;
+    margin-bottom: 12px;
+  }
+
+  .phase-title em {
+    font-style: italic;
+    color: var(--fern);
+  }
+
+  .phase-desc {
+    font-size: 11px;
+    line-height: 1.8;
+    color: var(--sage);
+    max-width: 320px;
+  }
+
+  .phase:nth-child(odd) .phase-desc { margin-left: auto; }
+
+  .phase-detail {
+    padding-top: 12px;
+    padding-bottom: 40px;
+  }
+
+  .detail-card {
+    background: var(--glow);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 20px;
+    transition: all 0.3s ease;
+  }
+
+  .detail-card:hover {
+    background: rgba(168,196,154,0.06);
+    border-color: rgba(168,196,154,0.35);
+  }
+
+  .detail-label {
+    font-size: 9px;
+    letter-spacing: 0.2em;
+    color: var(--leaf);
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+
+  .tech-pill {
+    display: inline-block;
+    font-size: 9px;
+    letter-spacing: 0.1em;
+    padding: 3px 8px;
+    border: 1px solid var(--line);
+    border-radius: 2px;
+    color: var(--fern);
+    margin: 2px;
+    background: rgba(74,103,65,0.1);
+    transition: all 0.2s ease;
+  }
+
+  .tech-pill:hover {
+    border-color: var(--fern);
+    background: rgba(74,103,65,0.2);
+  }
+
+  .metric {
+    margin-top: 12px;
+    font-size: 22px;
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    color: var(--amber);
+    line-height: 1;
+  }
+
+  .metric-label {
+    font-size: 9px;
+    color: var(--sage);
+    letter-spacing: 0.15em;
+    margin-top: 4px;
+  }
+
+  /* CONNECTOR ARROWS */
+  .connector {
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+  }
+
+  /* BOTTOM SECTION — Redistribution Impact */
+  .impact-section {
+    margin-top: 60px;
+    opacity: 0;
+    animation: fadeUp 1s ease 1.8s forwards;
+  }
+
+  .impact-header {
+    text-align: center;
+    margin-bottom: 40px;
+  }
+
+  .impact-title {
+    font-family: 'Fraunces', serif;
+    font-size: clamp(28px, 4vw, 42px);
+    font-weight: 300;
+    font-style: italic;
+    color: var(--fern);
+    margin-bottom: 8px;
+  }
+
+  .impact-sub {
+    font-size: 10px;
+    letter-spacing: 0.25em;
+    color: var(--sage);
+    text-transform: uppercase;
+  }
+
+  .flow-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2px;
+    margin-top: 20px;
+  }
+
+  .flow-cell {
+    background: var(--glow);
+    border: 1px solid var(--line);
+    padding: 28px 24px;
+    transition: all 0.4s ease;
+    cursor: default;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .flow-cell::before {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(to right, transparent, var(--leaf), transparent);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+
+  .flow-cell:hover { background: rgba(168,196,154,0.06); }
+  .flow-cell:hover::before { opacity: 1; }
+
+  .flow-icon {
+    font-size: 28px;
+    margin-bottom: 16px;
+    display: block;
+  }
+
+  .flow-title {
+    font-family: 'Fraunces', serif;
+    font-size: 18px;
+    font-weight: 300;
+    color: var(--cream);
+    margin-bottom: 8px;
+  }
+
+  .flow-desc {
+    font-size: 10px;
+    line-height: 1.8;
+    color: var(--sage);
+  }
+
+  /* EQUITY BAR */
+  .equity-section {
+    margin-top: 60px;
+    padding: 40px;
+    border: 1px solid var(--line);
+    background: var(--glow);
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 60px;
+    align-items: center;
+    opacity: 0;
+    animation: fadeUp 1s ease 2.2s forwards;
+  }
+
+  .equity-left .equity-title {
+    font-family: 'Fraunces', serif;
+    font-size: 32px;
+    font-weight: 300;
+    font-style: italic;
+    color: var(--cream);
+    line-height: 1.2;
+    margin-bottom: 12px;
+  }
+
+  .equity-left p {
+    font-size: 11px;
+    line-height: 1.9;
+    color: var(--sage);
+  }
+
+  .equity-right {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .equity-bar-item {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .equity-bar-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 10px;
+    color: var(--fern);
+    letter-spacing: 0.1em;
+  }
+
+  .equity-bar-track {
+    height: 3px;
+    background: rgba(168,196,154,0.1);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  .equity-bar-fill {
+    height: 100%;
+    border-radius: 2px;
+    background: linear-gradient(to right, var(--leaf), var(--fern));
+    width: 0;
+    transition: width 1.5s cubic-bezier(0.4,0,0.2,1);
+  }
+
+  .equity-bar-fill.animate { width: var(--target-width); }
+
+  /* FOOTER */
+  .footer {
+    margin-top: 80px;
+    text-align: center;
+    padding: 40px 0;
+    border-top: 1px solid var(--line);
+    opacity: 0;
+    animation: fadeUp 1s ease 2.5s forwards;
+  }
+
+  .footer-orbit {
+    font-family: 'Fraunces', serif;
+    font-size: 48px;
+    font-weight: 300;
+    color: var(--line);
+    letter-spacing: 0.3em;
+  }
+
+  .footer-tagline {
+    font-size: 10px;
+    letter-spacing: 0.3em;
+    color: var(--leaf);
+    text-transform: uppercase;
+    margin-top: 8px;
+  }
+
+  /* FLOATING LEGEND */
+  .legend {
+    position: fixed;
+    top: 40px;
+    right: 40px;
+    z-index: 10;
+    background: rgba(26,26,20,0.9);
+    border: 1px solid var(--line);
+    padding: 20px;
+    font-size: 10px;
+    backdrop-filter: blur(10px);
+    opacity: 0;
+    animation: fadeIn 1s ease 1.5s forwards;
+  }
+
+  .legend-title {
+    letter-spacing: 0.2em;
+    color: var(--sage);
+    text-transform: uppercase;
+    margin-bottom: 12px;
+    font-size: 9px;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+    color: var(--fern);
+  }
+
+  .legend-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  @keyframes fadeUp {
+    to { opacity: 1; transform: translateY(0); }
+    from { opacity: 0; transform: translateY(24px); }
+  }
+
+  @keyframes fadeIn {
+    to { opacity: 1; }
+    from { opacity: 0; }
+  }
+
+  /* Pulse on spine nodes */
+  @keyframes pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(168,196,154,0.3); }
+    50% { box-shadow: 0 0 0 8px rgba(168,196,154,0); }
+  }
+
+  .node-dot { animation: pulse 3s ease-in-out infinite; }
+  .phase:nth-child(2) .node-dot { animation-delay: 0.5s; }
+  .phase:nth-child(3) .node-dot { animation-delay: 1s; }
+  .phase:nth-child(4) .node-dot { animation-delay: 1.5s; }
+  .phase:nth-child(5) .node-dot { animation-delay: 2s; }
+
+  /* Tooltip */
+  .tooltip {
+    position: fixed;
+    background: rgba(26,26,20,0.95);
+    border: 1px solid var(--leaf);
+    padding: 12px 16px;
+    font-size: 10px;
+    color: var(--fern);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    z-index: 100;
+    max-width: 200px;
+    line-height: 1.7;
+    letter-spacing: 0.05em;
+  }
+
+  @media (max-width: 768px) {
+    .phase { grid-template-columns: 1fr; }
+    .phase:nth-child(odd) .phase-content,
+    .phase:nth-child(even) .phase-content { grid-column: 1; text-align: left; padding: 0 0 20px 0; order: 2; }
+    .phase:nth-child(odd) .phase-node,
+    .phase:nth-child(even) .phase-node { grid-column: 1; order: 1; flex-direction: row; gap: 12px; }
+    .phase:nth-child(odd) .phase-detail,
+    .phase:nth-child(even) .phase-detail { grid-column: 1; text-align: left; padding: 0 0 20px 0; order: 3; }
+    .spine { left: 10px; }
+    .flow-grid { grid-template-columns: 1fr; }
+    .equity-section { grid-template-columns: 1fr; gap: 30px; }
+    .legend { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="legend">
+  <div class="legend-title">System Layers</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#4a6741"></div>Physical</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#7eb8c4"></div>Digital</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#c8a84b"></div>Intelligence</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#d4735a"></div>Redistribution</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#a8c49a"></div>Policy</div>
+</div>
+
+<div class="tooltip" id="tooltip"></div>
+
+<div class="container">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="header-eyebrow">ORBIT · Green Line · System Architecture</div>
+    <h1>The <em>living</em><br>circular loop</h1>
+    <div class="header-sub">From a returned bottle → to a meal on a table → to a policy lever</div>
+  </div>
+
+  <!-- THE GREEN LINE -->
+  <div class="green-line" id="greenLine">
+    <div class="spine"></div>
+
+    <!-- PHASE 1 — Physical Infrastructure -->
+    <div class="phase" data-phase="1">
+      <div class="phase-content">
+        <span class="phase-tag">Layer 01 · Physical</span>
+        <h2 class="phase-title"><em>Return</em><br>Infrastructure</h2>
+        <p class="phase-desc">The physical act that starts the loop. Containers returned via Re-turn Ireland's kiosk network generate verified deposit credits — the raw material of the whole system.</p>
+      </div>
+      <div class="phase-node">
+        <div class="node-dot" 
+          data-tip="Re-turn Ireland integration via API. Each container scan generates a verified deposit token — the first signal in ORBIT's chain."
+          style="border-color:#4a6741">
+        </div>
+        <span class="phase-label">01</span>
+      </div>
+      <div class="phase-detail">
+        <div class="detail-card">
+          <div class="detail-label">Tech Stack</div>
+          <span class="tech-pill">Re-turn API</span>
+          <span class="tech-pill">QR / Barcode Scan</span>
+          <span class="tech-pill">Kiosk SDK</span>
+          <div class="metric">€66.7M</div>
+          <div class="metric-label">unclaimed deposit value annually</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PHASE 2 — Digital Identity -->
+    <div class="phase" data-phase="2">
+      <div class="phase-content">
+        <span class="phase-tag">Layer 02 · Digital</span>
+        <h2 class="phase-title"><em>EcoWallet</em><br>Identity Layer</h2>
+        <p class="phase-desc">At onboarding, users choose their mode: receive EcoCredits or donate to community. A non-tradeable, soulbound wallet is created — tied to behaviour, not money.</p>
+      </div>
+      <div class="phase-node">
+        <div class="node-dot"
+          data-tip="Soulbound EcoWallet: non-tradeable tokens prevent speculation & gaming. Two pathways: Receive (EcoCredits → food) or Donate (value → vulnerable households)."
+          style="border-color:#7eb8c4">
+        </div>
+        <span class="phase-label">02</span>
+      </div>
+      <div class="phase-detail">
+        <div class="detail-card">
+          <div class="detail-label">Architecture</div>
+          <span class="tech-pill">Soulbound Tokens</span>
+          <span class="tech-pill">Two-mode Onboarding</span>
+          <span class="tech-pill">Receive / Donate</span>
+          <div class="metric">2 paths</div>
+          <div class="metric-label">inclusive by design · no-app donor route</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PHASE 3 — EcoQuiz Intelligence -->
+    <div class="phase" data-phase="3">
+      <div class="phase-content">
+        <span class="phase-tag">Layer 03 · Intelligence</span>
+        <h2 class="phase-title"><em>EcoQuiz</em><br>Footprint Engine</h2>
+        <p class="phase-desc">18 questions across 9 life dimensions — Mind & Body, Travel, Food, Home, Work, Wear, Care, Vote, Buy. Score 0–54 maps to a Resonance Level that unlocks personalised behaviour journeys, not just a label.</p>
+      </div>
+      <div class="phase-node">
+        <div class="node-dot"
+          data-tip="9 categories × 2 questions each. Score → Resonance tier (High/Moderate/Low) → unlocks personalised behaviour journey. Connected to Act Now Collective resource URLs per category."
+          style="border-color:#c8a84b">
+        </div>
+        <span class="phase-label">03</span>
+      </div>
+      <div class="phase-detail">
+        <div class="detail-card">
+          <div class="detail-label">Dimensions</div>
+          <span class="tech-pill">Mind &amp; Body</span>
+          <span class="tech-pill">Where I Live</span>
+          <span class="tech-pill">What I Eat</span>
+          <span class="tech-pill">How I Travel</span>
+          <span class="tech-pill">What I Wear</span>
+          <span class="tech-pill">What I Buy</span>
+          <span class="tech-pill">Who I Care For</span>
+          <span class="tech-pill">Where I Work</span>
+          <span class="tech-pill">How I Vote</span>
+          <div class="metric">54 pts</div>
+          <div class="metric-label">max score · radar chart output</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PHASE 4 — Behaviour Engine -->
+    <div class="phase" data-phase="4">
+      <div class="phase-content">
+        <span class="phase-tag">Layer 04 · Behaviour</span>
+        <h2 class="phase-title"><em>Qualifying</em><br>Purchase Engine</h2>
+        <p class="phase-desc">The act of recycling starts the chain. EcoCredits multiply when users make qualifying purchases: local, organic, plant-based, or package-free. The triple signal — quiz score + purchase + location — prevents gaming.</p>
+      </div>
+      <div class="phase-node">
+        <div class="node-dot"
+          data-tip="Triple signal: EcoQuiz tier + verified purchase category + geolocation. All three required to earn multiplied credits. Prevents system gaming while rewarding real behaviour change."
+          style="border-color:#c8a84b">
+        </div>
+        <span class="phase-label">04</span>
+      </div>
+      <div class="phase-detail">
+        <div class="detail-card">
+          <div class="detail-label">Signal Stack</div>
+          <span class="tech-pill">Quiz Tier</span>
+          <span class="tech-pill">Purchase Verification</span>
+          <span class="tech-pill">Geolocation</span>
+          <span class="tech-pill">Partner Retailer API</span>
+          <div class="metric">×3</div>
+          <div class="metric-label">credit multiplier for qualifying choices</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PHASE 5 — Redistribution Engine -->
+    <div class="phase" data-phase="5">
+      <div class="phase-content">
+        <span class="phase-tag">Layer 05 · Redistribution</span>
+        <h2 class="phase-title"><em>Democratic</em><br>Food Distribution</h2>
+        <p class="phase-desc">Surplus food from partner retailers is tokenised as FoodPacks — categorised by contents, location, and carbon score. Wallet holders redeem. Donate-mode users receive via community hubs, no app required. The wealth of Ireland's circular economy flows back to those who generate it.</p>
+      </div>
+      <div class="phase-node">
+        <div class="node-dot"
+          data-tip="FoodPacks: surplus food tokenised with location, contents (protein/produce/staple), and carbon score. Community hub access ensures no-app entry for vulnerable households."
+          style="border-color:#d4735a">
+        </div>
+        <span class="phase-label">05</span>
+      </div>
+      <div class="phase-detail">
+        <div class="detail-card">
+          <div class="detail-label">Distribution Nodes</div>
+          <span class="tech-pill">Sustainable Retailers</span>
+          <span class="tech-pill">Local Producers</span>
+          <span class="tech-pill">Community Hubs</span>
+          <span class="tech-pill">School Programmes</span>
+          <span class="tech-pill">FoodPack Tokens</span>
+          <div class="metric">0 app</div>
+          <div class="metric-label">required for vulnerable household access</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PHASE 6 — Policy Layer -->
+    <div class="phase" data-phase="6">
+      <div class="phase-content">
+        <span class="phase-tag">Layer 06 · Policy</span>
+        <h2 class="phase-title"><em>Impact</em><br>Intelligence Loop</h2>
+        <p class="phase-desc">Aggregated, anonymised behavioural data builds the evidence base for Government and Re-turn Ireland: unclaimed deposits as a public good fund. ORBIT becomes not just a platform, but a democratic argument.</p>
+      </div>
+      <div class="phase-node">
+        <div class="node-dot"
+          data-tip="Anonymised aggregate data → policy lever. Shows Government the collective impact of redirecting unclaimed deposits. ORBIT as democratic infrastructure, not just an app."
+          style="border-color:#a8c49a">
+        </div>
+        <span class="phase-label">06</span>
+      </div>
+      <div class="phase-detail">
+        <div class="detail-card">
+          <div class="detail-label">Outputs</div>
+          <span class="tech-pill">Impact Dashboard</span>
+          <span class="tech-pill">Anonymised Reports</span>
+          <span class="tech-pill">Re-turn Partnership</span>
+          <span class="tech-pill">Govt Evidence Base</span>
+          <div class="metric">∞</div>
+          <div class="metric-label">the loop that closes the loop</div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- end green-line -->
+
+  <!-- IMPACT FLOW SECTION -->
+  <div class="impact-section">
+    <div class="impact-header">
+      <div class="impact-title">Where the value flows</div>
+      <div class="impact-sub">€66.7M · redistributed democratically</div>
+    </div>
+
+    <div class="flow-grid">
+      <div class="flow-cell">
+        <span class="flow-icon">🥬</span>
+        <div class="flow-title">EcoWallet Credits</div>
+        <p class="flow-desc">Redeemable for food at partner sustainable retailers and local producers. Value stays circular — every credit earned was a container returned.</p>
+      </div>
+      <div class="flow-cell">
+        <span class="flow-icon">🏘️</span>
+        <div class="flow-title">Community Donation</div>
+        <p class="flow-desc">Users who choose to donate redirect value to vulnerable households, community food initiatives, and school programmes — no app required to receive.</p>
+      </div>
+      <div class="flow-cell">
+        <span class="flow-icon">🌀</span>
+        <div class="flow-title">Collective Impact</div>
+        <p class="flow-desc">"Your returns + 2,847 others funded 400 meals this week." The system makes invisible generosity visible — turning recycling into solidarity.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- EQUITY BARS -->
+  <div class="equity-section" id="equitySection">
+    <div class="equity-left">
+      <div class="equity-title">Designed for inclusion,<br>not just engagement</div>
+      <p>ORBIT's biggest design challenge isn't the technology — it's ensuring the most vulnerable communities benefit without needing to navigate it. Every layer has an offline pathway, a community-hub fallback, and a zero-barrier entry point.</p>
+    </div>
+    <div class="equity-right">
+      <div class="equity-bar-item">
+        <div class="equity-bar-label"><span>Accessible without smartphone</span><span>100%</span></div>
+        <div class="equity-bar-track"><div class="equity-bar-fill" style="--target-width:100%"></div></div>
+      </div>
+      <div class="equity-bar-item">
+        <div class="equity-bar-label"><span>Community hub distribution nodes</span><span>Dublin Phase 1</span></div>
+        <div class="equity-bar-track"><div class="equity-bar-fill" style="--target-width:35%"></div></div>
+      </div>
+      <div class="equity-bar-item">
+        <div class="equity-bar-label"><span>Unclaimed deposits redirected</span><span>Target: 40%</span></div>
+        <div class="equity-bar-track"><div class="equity-bar-fill" style="--target-width:40%"></div></div>
+      </div>
+      <div class="equity-bar-item">
+        <div class="equity-bar-label"><span>Behaviour change proven (EcoQuiz)</span><span>measurable</span></div>
+        <div class="equity-bar-track"><div class="equity-bar-fill" style="--target-width:75%"></div></div>
+      </div>
+      <div class="equity-bar-item">
+        <div class="equity-bar-label"><span>Policy evidence loop closed</span><span>Phase 6</span></div>
+        <div class="equity-bar-track"><div class="equity-bar-fill" style="--target-width:20%"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <div class="footer">
+    <div class="footer-orbit">ORBIT</div>
+    <div class="footer-tagline">A democratic redistribution engine · Ireland's circular economy · Trinity College Dublin</div>
+  </div>
+
+</div><!-- end container -->
+
+<script>
+  // Intersection Observer for phase animations
+  const phases = document.querySelectorAll('.phase');
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach((entry, i) => {
+      if (entry.isIntersecting) {
+        setTimeout(() => entry.target.classList.add('visible'), i * 100);
+      }
+    });
+  }, { threshold: 0.15 });
+
+  phases.forEach(p => observer.observe(p));
+
+  // Equity bars animation
+  const equitySection = document.getElementById('equitySection');
+  const barObserver = new IntersectionObserver((entries) => {
+    if (entries[0].isIntersecting) {
+      document.querySelectorAll('.equity-bar-fill').forEach((bar, i) => {
+        setTimeout(() => bar.classList.add('animate'), i * 200);
+      });
+    }
+  }, { threshold: 0.3 });
+  barObserver.observe(equitySection);
+
+  // Tooltip
+  const tooltip = document.getElementById('tooltip');
+  document.querySelectorAll('[data-tip]').forEach(el => {
+    el.addEventListener('mouseenter', (e) => {
+      tooltip.textContent = e.target.dataset.tip;
+      tooltip.style.opacity = '1';
+    });
+    el.addEventListener('mousemove', (e) => {
+      tooltip.style.left = (e.clientX + 16) + 'px';
+      tooltip.style.top = (e.clientY - 8) + 'px';
+    });
+    el.addEventListener('mouseleave', () => {
+      tooltip.style.opacity = '0';
+    });
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,1022 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ORBIT · EcoWallet</title>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Instrument+Sans:wght@300;400;500&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
+<style>
+:root {
+  --sand: #f5ede0;
+  --linen: #ede4d4;
+  --warm: #e2d4bc;
+  --clay: #c4a882;
+  --terra: #9a7254;
+  --bark: #5c3d20;
+  --ink: #2a1a0a;
+  --moss: #3a5428;
+  --leaf: #5a8040;
+  --fern: #84b45c;
+  --mint: #b8d898;
+  --sky: #6aacbc;
+  --gold: #c8902a;
+  --amber: #e8b040;
+  --coral: #d46040;
+  --blush: #e8a090;
+  --glow: rgba(90,128,64,0.08);
+  --line: rgba(90,128,64,0.15);
+  --shadow: rgba(42,26,10,0.08);
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+html { scroll-behavior:smooth; }
+
+body {
+  background: var(--sand);
+  color: var(--ink);
+  font-family: 'Instrument Sans', sans-serif;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Warm paper texture */
+body::before {
+  content:'';
+  position:fixed; inset:0;
+  background:
+    radial-gradient(ellipse 80% 50% at 15% 5%, rgba(200,144,42,0.08) 0%, transparent 55%),
+    radial-gradient(ellipse 60% 70% at 85% 95%, rgba(58,84,40,0.06) 0%, transparent 50%),
+    radial-gradient(ellipse 40% 30% at 50% 50%, rgba(255,255,255,0.4) 0%, transparent 70%);
+  pointer-events:none; z-index:0;
+}
+
+/* ══ TOP BAR ══ */
+.topbar {
+  position:sticky; top:0; z-index:100;
+  background:rgba(245,237,224,0.92);
+  backdrop-filter:blur(20px);
+  border-bottom:1px solid var(--warm);
+  padding:0 32px;
+  height:52px;
+  display:flex; align-items:center; justify-content:space-between;
+}
+.topbar-logo {
+  font-family:'Instrument Serif', serif;
+  font-size:20px; font-style:italic;
+  color:var(--moss); letter-spacing:-0.01em;
+}
+.topbar-user {
+  display:flex; align-items:center; gap:10px;
+  font-size:12px; color:var(--terra);
+}
+.user-avatar {
+  width:28px; height:28px; border-radius:50%;
+  background:linear-gradient(135deg, var(--fern), var(--moss));
+  display:flex; align-items:center; justify-content:center;
+  font-size:12px; color:white; font-weight:500;
+}
+.topbar-mode {
+  font-size:10px; letter-spacing:0.12em;
+  padding:4px 10px;
+  background:rgba(90,128,64,0.1);
+  border:1px solid var(--line);
+  color:var(--moss); border-radius:20px;
+}
+
+/* ══ MAIN GRID ══ */
+.wallet-grid {
+  position:relative; z-index:1;
+  display:grid;
+  grid-template-columns:360px 1fr;
+  grid-template-rows:auto;
+  gap:0;
+  min-height:calc(100vh - 52px);
+}
+@media(max-width:900px){ .wallet-grid { grid-template-columns:1fr; } }
+
+/* ══════════════
+   LEFT PANEL — wallet card
+══════════════ */
+.wallet-panel {
+  background:var(--linen);
+  border-right:1px solid var(--warm);
+  padding:32px 28px;
+  display:flex; flex-direction:column; gap:24px;
+  position:sticky; top:52px;
+  height:calc(100vh - 52px);
+  overflow-y:auto;
+}
+
+/* The Card */
+.eco-card {
+  border-radius:16px;
+  background:linear-gradient(135deg, var(--bark) 0%, var(--moss) 60%, var(--leaf) 100%);
+  padding:28px 24px;
+  color:white;
+  position:relative; overflow:hidden;
+  box-shadow:0 20px 48px rgba(42,26,10,0.25);
+}
+.eco-card::before {
+  content:'';
+  position:absolute; inset:0;
+  background:url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Ccircle cx='30' cy='30' r='20'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+}
+.eco-card::after {
+  content:'◌';
+  position:absolute; right:-20px; bottom:-30px;
+  font-size:160px; color:rgba(255,255,255,0.04);
+  line-height:1;
+}
+
+.card-orbit {
+  font-size:10px; letter-spacing:0.25em;
+  text-transform:uppercase; opacity:0.6; margin-bottom:20px;
+}
+.card-balance {
+  font-family:'Instrument Serif', serif;
+  font-size:52px; line-height:1; letter-spacing:-0.02em;
+  margin-bottom:4px;
+}
+.card-unit {
+  font-size:11px; opacity:0.6; letter-spacing:0.1em;
+  margin-bottom:24px;
+}
+.card-meta {
+  display:flex; justify-content:space-between;
+  font-size:10px; opacity:0.7;
+}
+.card-level {
+  display:inline-flex; align-items:center; gap:6px;
+  font-size:10px; letter-spacing:0.12em;
+  padding:4px 10px;
+  background:rgba(255,255,255,0.12);
+  border-radius:20px; margin-top:16px;
+}
+
+/* Progress to next tier */
+.tier-progress { margin-top:4px; }
+.tier-label {
+  display:flex; justify-content:space-between;
+  font-size:10px; color:var(--terra); margin-bottom:6px;
+}
+.tier-track {
+  height:4px; background:var(--warm); border-radius:2px; overflow:hidden;
+}
+.tier-fill {
+  height:100%; background:linear-gradient(to right, var(--fern), var(--amber));
+  border-radius:2px; width:0;
+  transition:width 1.8s cubic-bezier(0.4,0,0.2,1);
+}
+
+/* Quick stats */
+.quick-stats {
+  display:grid; grid-template-columns:1fr 1fr; gap:8px;
+}
+.stat-cell {
+  background:white; padding:16px 14px;
+  border:1px solid var(--warm);
+  border-radius:8px;
+}
+.stat-icon { font-size:18px; margin-bottom:6px; display:block; }
+.stat-val {
+  font-family:'Instrument Serif', serif;
+  font-size:22px; color:var(--ink); line-height:1;
+}
+.stat-label { font-size:9px; color:var(--terra); margin-top:3px; letter-spacing:0.08em; }
+
+/* Mode selector */
+.mode-selector {
+  background:white; border:1px solid var(--warm);
+  border-radius:8px; padding:16px;
+}
+.mode-title {
+  font-size:10px; letter-spacing:0.15em;
+  text-transform:uppercase; color:var(--terra);
+  margin-bottom:12px;
+}
+.mode-opts { display:flex; gap:6px; }
+.mode-opt {
+  flex:1; padding:10px 8px; text-align:center;
+  border:1px solid var(--warm); border-radius:6px;
+  cursor:pointer; transition:all 0.2s ease;
+  font-size:10px;
+}
+.mode-opt:hover { border-color:var(--fern); }
+.mode-opt.active {
+  background:var(--moss); color:white;
+  border-color:var(--moss);
+}
+.mode-opt-icon { font-size:18px; display:block; margin-bottom:4px; }
+.mode-opt-label { letter-spacing:0.05em; }
+
+/* FoodPack claim */
+.foodpack-section {
+  background:white; border:1px solid var(--warm);
+  border-radius:8px; padding:16px;
+}
+.fp-title {
+  font-size:10px; letter-spacing:0.15em;
+  text-transform:uppercase; color:var(--terra);
+  margin-bottom:12px;
+}
+.fp-item {
+  display:flex; align-items:center; gap:12px;
+  padding:10px 0; border-bottom:1px solid var(--linen);
+}
+.fp-item:last-child { border-bottom:none; padding-bottom:0; }
+.fp-icon {
+  width:36px; height:36px; border-radius:8px;
+  display:flex; align-items:center; justify-content:center;
+  font-size:18px; flex-shrink:0;
+}
+.fp-icon.produce { background:rgba(90,128,64,0.1); }
+.fp-icon.protein { background:rgba(200,144,42,0.1); }
+.fp-icon.staple  { background:rgba(106,172,188,0.1); }
+.fp-info { flex:1; }
+.fp-name { font-size:12px; color:var(--ink); margin-bottom:2px; }
+.fp-meta { font-size:9px; color:var(--terra); }
+.fp-cost {
+  font-family:'Instrument Serif', serif;
+  font-size:16px; color:var(--moss);
+}
+.fp-claim {
+  font-size:9px; padding:5px 10px;
+  background:var(--moss); color:white;
+  border:none; border-radius:4px; cursor:pointer;
+  letter-spacing:0.1em; font-family:'DM Mono', monospace;
+  transition:all 0.2s ease;
+}
+.fp-claim:hover { background:var(--leaf); }
+
+/* ══════════════
+   RIGHT PANEL — impact dashboard
+══════════════ */
+.impact-panel {
+  padding:32px 36px;
+  overflow-y:auto;
+}
+
+.impact-greeting {
+  margin-bottom:36px;
+  opacity:0; animation:fadeUp 0.7s ease 0.2s forwards;
+}
+.greeting-time {
+  font-size:10px; letter-spacing:0.2em;
+  text-transform:uppercase; color:var(--terra);
+  margin-bottom:8px;
+}
+.greeting-headline {
+  font-family:'Instrument Serif', serif;
+  font-size:clamp(28px,4vw,44px);
+  font-weight:400; line-height:1.1;
+  letter-spacing:-0.02em; color:var(--ink);
+}
+.greeting-headline em { font-style:italic; color:var(--moss); }
+.greeting-sub {
+  font-size:12px; color:var(--terra);
+  margin-top:8px; line-height:1.7;
+}
+
+/* Impact counter row */
+.impact-counters {
+  display:grid; grid-template-columns:repeat(3,1fr);
+  gap:12px; margin-bottom:32px;
+  opacity:0; animation:fadeUp 0.7s ease 0.4s forwards;
+}
+@media(max-width:700px){ .impact-counters { grid-template-columns:1fr 1fr; } }
+
+.impact-counter {
+  background:white; border:1px solid var(--warm);
+  border-radius:12px; padding:20px 18px;
+  position:relative; overflow:hidden;
+  transition:all 0.3s ease;
+}
+.impact-counter:hover { box-shadow:0 8px 24px var(--shadow); transform:translateY(-2px); }
+.impact-counter::before {
+  content:'';
+  position:absolute; top:0; left:0; right:0; height:3px;
+  background:var(--counter-color, var(--fern));
+}
+.ic-icon { font-size:24px; margin-bottom:10px; display:block; }
+.ic-val {
+  font-family:'Instrument Serif', serif;
+  font-size:36px; line-height:1;
+  color:var(--ink); letter-spacing:-0.02em;
+}
+.ic-unit { font-size:11px; color:var(--terra); }
+.ic-label { font-size:10px; color:var(--clay); margin-top:6px; letter-spacing:0.05em; }
+.ic-delta {
+  position:absolute; top:16px; right:16px;
+  font-size:9px; letter-spacing:0.1em;
+  padding:3px 7px; border-radius:10px;
+}
+.delta-up { background:rgba(90,128,64,0.1); color:var(--moss); }
+
+/* Community pulse */
+.community-section {
+  background:white; border:1px solid var(--warm);
+  border-radius:12px; padding:24px;
+  margin-bottom:24px;
+  opacity:0; animation:fadeUp 0.7s ease 0.6s forwards;
+}
+.cs-header {
+  display:flex; justify-content:space-between; align-items:flex-start;
+  margin-bottom:20px;
+}
+.cs-title {
+  font-family:'Instrument Serif', serif;
+  font-size:22px; font-style:italic; color:var(--ink);
+}
+.cs-live {
+  display:flex; align-items:center; gap:5px;
+  font-size:9px; color:var(--coral); letter-spacing:0.12em;
+}
+.live-dot {
+  width:6px; height:6px; border-radius:50%;
+  background:var(--coral);
+  animation:livePulse 1.5s ease-in-out infinite;
+}
+@keyframes livePulse {
+  0%,100%{opacity:1;transform:scale(1)}
+  50%{opacity:0.4;transform:scale(0.7)}
+}
+
+/* Activity feed */
+.activity-feed { display:flex; flex-direction:column; gap:0; }
+.activity-item {
+  display:flex; align-items:center; gap:14px;
+  padding:12px 0;
+  border-bottom:1px solid var(--linen);
+  opacity:0;
+  animation:slideIn 0.4s ease forwards;
+}
+.activity-item:last-child { border-bottom:none; }
+.ai-avatar {
+  width:32px; height:32px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  font-size:14px; flex-shrink:0;
+}
+.ai-body { flex:1; }
+.ai-text { font-size:11px; color:var(--ink); line-height:1.5; }
+.ai-text strong { color:var(--moss); }
+.ai-time { font-size:9px; color:var(--clay); margin-top:2px; letter-spacing:0.05em; }
+.ai-credits {
+  font-family:'Instrument Serif', serif;
+  font-size:16px; color:var(--gold); flex-shrink:0;
+}
+
+/* Collective impact bar */
+.collective-bar {
+  margin-top:16px; padding:16px;
+  background:var(--linen); border-radius:8px;
+}
+.cb-text { font-size:11px; color:var(--bark); line-height:1.6; margin-bottom:10px; }
+.cb-text strong { color:var(--moss); }
+.cb-progress-wrap { position:relative; }
+.cb-track {
+  height:8px; background:var(--warm);
+  border-radius:4px; overflow:hidden;
+}
+.cb-fill {
+  height:100%; border-radius:4px;
+  background:linear-gradient(to right, var(--fern), var(--amber));
+  width:0; transition:width 2s cubic-bezier(0.4,0,0.2,1);
+}
+.cb-labels {
+  display:flex; justify-content:space-between;
+  font-size:9px; color:var(--terra); margin-top:4px;
+}
+
+/* Weekly journey */
+.journey-section {
+  background:white; border:1px solid var(--warm);
+  border-radius:12px; padding:24px;
+  margin-bottom:24px;
+  opacity:0; animation:fadeUp 0.7s ease 0.8s forwards;
+}
+.js-title {
+  font-family:'Instrument Serif', serif;
+  font-size:22px; font-style:italic;
+  color:var(--ink); margin-bottom:20px;
+}
+.journey-days {
+  display:grid; grid-template-columns:repeat(7,1fr);
+  gap:6px;
+}
+.day-cell {
+  text-align:center;
+}
+.day-label { font-size:8px; letter-spacing:0.1em; color:var(--clay); margin-bottom:6px; }
+.day-ring {
+  width:36px; height:36px; border-radius:50%;
+  margin:0 auto;
+  display:flex; align-items:center; justify-content:center;
+  font-size:14px;
+  position:relative;
+}
+.day-ring.empty { background:var(--linen); }
+.day-ring.partial {
+  background:rgba(90,128,64,0.15);
+  border:2px solid rgba(90,128,64,0.3);
+}
+.day-ring.full {
+  background:var(--moss);
+}
+.day-ring.today {
+  border:2px solid var(--amber);
+}
+.day-credits { font-size:9px; color:var(--terra); margin-top:4px; }
+
+/* Behaviour nudges */
+.nudges-section {
+  background:white; border:1px solid var(--warm);
+  border-radius:12px; padding:24px;
+  margin-bottom:24px;
+  opacity:0; animation:fadeUp 0.7s ease 1s forwards;
+}
+.nudge-title {
+  font-family:'Instrument Serif', serif;
+  font-size:22px; font-style:italic;
+  color:var(--ink); margin-bottom:20px;
+}
+.nudge-item {
+  display:flex; gap:16px; align-items:flex-start;
+  padding:14px 0; border-bottom:1px solid var(--linen);
+}
+.nudge-item:last-child { border-bottom:none; padding-bottom:0; }
+.nudge-icon {
+  width:40px; height:40px; border-radius:10px;
+  display:flex; align-items:center; justify-content:center;
+  font-size:20px; flex-shrink:0;
+}
+.nudge-icon.food { background:rgba(90,128,64,0.1); }
+.nudge-icon.travel { background:rgba(106,172,188,0.1); }
+.nudge-icon.buy { background:rgba(200,144,42,0.1); }
+.nudge-icon.home { background:rgba(212,96,64,0.1); }
+.nudge-body { flex:1; }
+.nudge-label {
+  font-size:9px; letter-spacing:0.12em;
+  text-transform:uppercase; color:var(--gold);
+  margin-bottom:4px;
+}
+.nudge-text { font-size:12px; color:var(--ink); line-height:1.5; margin-bottom:6px; }
+.nudge-reward {
+  font-size:10px; color:var(--moss);
+  display:flex; align-items:center; gap:4px;
+}
+.btn-nudge {
+  font-family:'DM Mono', monospace;
+  font-size:9px; letter-spacing:0.1em;
+  padding:6px 14px; background:var(--linen);
+  border:1px solid var(--warm); color:var(--terra);
+  cursor:pointer; border-radius:4px; flex-shrink:0;
+  transition:all 0.2s ease; align-self:center;
+}
+.btn-nudge:hover { background:var(--moss); color:white; border-color:var(--moss); }
+
+/* Donate impact visualiser */
+.donate-section {
+  background:linear-gradient(135deg, var(--bark), var(--moss));
+  border-radius:12px; padding:28px;
+  color:white;
+  opacity:0; animation:fadeUp 0.7s ease 1.2s forwards;
+  margin-bottom:24px;
+}
+.donate-eyebrow {
+  font-size:9px; letter-spacing:0.25em;
+  text-transform:uppercase; opacity:0.6;
+  margin-bottom:16px;
+}
+.donate-headline {
+  font-family:'Instrument Serif', serif;
+  font-size:clamp(22px,3vw,32px);
+  font-style:italic; line-height:1.2;
+  margin-bottom:8px;
+}
+.donate-sub {
+  font-size:11px; opacity:0.6;
+  line-height:1.8; margin-bottom:24px;
+}
+.donate-stats {
+  display:grid; grid-template-columns:repeat(3,1fr);
+  gap:12px;
+}
+.ds-item { text-align:center; padding:16px 8px; background:rgba(255,255,255,0.07); border-radius:8px; }
+.ds-val {
+  font-family:'Instrument Serif', serif;
+  font-size:28px; color:var(--mint); line-height:1;
+}
+.ds-label { font-size:9px; opacity:0.6; margin-top:4px; letter-spacing:0.08em; line-height:1.4; }
+
+/* Orbit rings visualiser */
+.orbit-visual {
+  margin-bottom:24px;
+  background:white; border:1px solid var(--warm);
+  border-radius:12px; padding:24px;
+  opacity:0; animation:fadeUp 0.7s ease 1.4s forwards;
+  text-align:center;
+}
+.ov-title {
+  font-family:'Instrument Serif', serif;
+  font-size:22px; font-style:italic;
+  color:var(--ink); margin-bottom:20px; text-align:left;
+}
+.orbit-rings {
+  position:relative; width:200px; height:200px;
+  margin:0 auto;
+}
+.ring {
+  position:absolute; border-radius:50%;
+  border:2px solid;
+  animation:spin linear infinite;
+}
+.ring-1 { inset:0; border-color:rgba(90,128,64,0.3); animation-duration:20s; }
+.ring-2 { inset:20px; border-color:rgba(200,144,42,0.4); animation-duration:15s; animation-direction:reverse; }
+.ring-3 { inset:40px; border-color:rgba(106,172,188,0.5); animation-duration:10s; }
+.ring-center {
+  position:absolute; inset:60px;
+  background:linear-gradient(135deg, var(--moss), var(--fern));
+  border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  flex-direction:column;
+}
+.ring-center-val {
+  font-family:'Instrument Serif', serif;
+  font-size:20px; color:white; line-height:1;
+}
+.ring-center-label { font-size:8px; color:rgba(255,255,255,0.6); letter-spacing:0.1em; }
+
+.ring-legend {
+  display:flex; justify-content:center; gap:20px;
+  margin-top:16px;
+}
+.rl-item {
+  display:flex; align-items:center; gap:6px;
+  font-size:9px; color:var(--terra);
+}
+.rl-dot {
+  width:8px; height:8px; border-radius:50%;
+}
+
+@keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+@keyframes fadeUp {
+  from{opacity:0;transform:translateY(16px)}
+  to{opacity:1;transform:translateY(0)}
+}
+@keyframes slideIn {
+  from{opacity:0;transform:translateX(-10px)}
+  to{opacity:1;transform:translateX(0)}
+}
+
+/* Ireland map placeholder */
+.map-section {
+  background:white; border:1px solid var(--warm);
+  border-radius:12px; padding:24px;
+  opacity:0; animation:fadeUp 0.7s ease 1.6s forwards;
+}
+.map-title {
+  font-family:'Instrument Serif', serif;
+  font-size:22px; font-style:italic;
+  color:var(--ink); margin-bottom:16px;
+}
+.map-placeholder {
+  background:var(--linen); border-radius:8px;
+  height:180px; display:flex; flex-direction:column;
+  align-items:center; justify-content:center; gap:8px;
+}
+.map-icon { font-size:40px; }
+.map-text { font-size:11px; color:var(--terra); text-align:center; line-height:1.6; }
+
+.hotspot-grid {
+  display:grid; grid-template-columns:repeat(3,1fr);
+  gap:8px; margin-top:16px;
+}
+.hotspot {
+  text-align:center; padding:12px 8px;
+  background:var(--linen); border-radius:8px;
+}
+.hs-icon { font-size:20px; display:block; margin-bottom:4px; }
+.hs-name { font-size:10px; color:var(--bark); font-weight:500; }
+.hs-count { font-size:9px; color:var(--terra); }
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <div class="topbar-logo">ORBIT EcoWallet</div>
+  <div class="topbar-user">
+    <div class="topbar-mode">🌿 Receive mode</div>
+    <span style="color:var(--clay);font-size:11px">Nayara · High Resonance</span>
+    <div class="user-avatar">N</div>
+  </div>
+</div>
+
+<div class="wallet-grid">
+
+  <!-- ══ LEFT: WALLET CARD ══ -->
+  <div class="wallet-panel">
+
+    <!-- Card -->
+    <div class="eco-card">
+      <div class="card-orbit">ORBIT · EcoWallet</div>
+      <div class="card-balance" id="balanceCounter">0</div>
+      <div class="card-unit">EcoCredits available</div>
+      <div class="card-meta">
+        <span>Since Jan 2026</span>
+        <span>Dublin, Ireland</span>
+      </div>
+      <div class="card-level">🌿 High Resonance · Tier 3</div>
+    </div>
+
+    <!-- Tier progress -->
+    <div class="tier-progress">
+      <div class="tier-label">
+        <span>Progress to Community Champion</span>
+        <span style="color:var(--gold)">847 / 1000</span>
+      </div>
+      <div class="tier-track">
+        <div class="tier-fill" id="tierFill"></div>
+      </div>
+    </div>
+
+    <!-- Quick stats -->
+    <div class="quick-stats">
+      <div class="stat-cell">
+        <span class="stat-icon">🍾</span>
+        <div class="stat-val" id="bottlesCount">0</div>
+        <div class="stat-label">Containers returned</div>
+      </div>
+      <div class="stat-cell">
+        <span class="stat-icon">🥬</span>
+        <div class="stat-val" id="mealsCount">0</div>
+        <div class="stat-label">FoodPacks redeemed</div>
+      </div>
+      <div class="stat-cell">
+        <span class="stat-icon">♻️</span>
+        <div class="stat-val" id="co2Count">0</div>
+        <div class="stat-label">kg CO₂ saved</div>
+      </div>
+      <div class="stat-cell">
+        <span class="stat-icon">❤️</span>
+        <div class="stat-val" id="donatedCount">0</div>
+        <div class="stat-label">Credits donated</div>
+      </div>
+    </div>
+
+    <!-- Mode selector -->
+    <div class="mode-selector">
+      <div class="mode-title">Participation mode</div>
+      <div class="mode-opts">
+        <div class="mode-opt active" onclick="selectMode(this)">
+          <span class="mode-opt-icon">🌿</span>
+          <div class="mode-opt-label">Receive</div>
+        </div>
+        <div class="mode-opt" onclick="selectMode(this)">
+          <span class="mode-opt-icon">❤️</span>
+          <div class="mode-opt-label">Donate</div>
+        </div>
+        <div class="mode-opt" onclick="selectMode(this)">
+          <span class="mode-opt-icon">⚡</span>
+          <div class="mode-opt-label">Split</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FoodPacks available -->
+    <div class="foodpack-section">
+      <div class="fp-title">FoodPacks near you</div>
+      <div class="fp-item">
+        <div class="fp-icon produce">🥦</div>
+        <div class="fp-info">
+          <div class="fp-name">Seasonal Produce Pack</div>
+          <div class="fp-meta">Happy Pear · 0.4km · Low carbon ↓</div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
+          <div class="fp-cost">42⊙</div>
+          <button class="fp-claim" onclick="claimPack(this,42)">Claim</button>
+        </div>
+      </div>
+      <div class="fp-item">
+        <div class="fp-icon protein">🥚</div>
+        <div class="fp-info">
+          <div class="fp-name">Protein &amp; Dairy Pack</div>
+          <div class="fp-meta">Local Farm · 1.2km · Organic</div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
+          <div class="fp-cost">60⊙</div>
+          <button class="fp-claim" onclick="claimPack(this,60)">Claim</button>
+        </div>
+      </div>
+      <div class="fp-item">
+        <div class="fp-icon staple">🌾</div>
+        <div class="fp-info">
+          <div class="fp-name">Grains &amp; Pulses Pack</div>
+          <div class="fp-meta">Honest To Goodness · 0.8km</div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
+          <div class="fp-cost">35⊙</div>
+          <button class="fp-claim" onclick="claimPack(this,35)">Claim</button>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- end wallet-panel -->
+
+  <!-- ══ RIGHT: IMPACT DASHBOARD ══ -->
+  <div class="impact-panel">
+
+    <!-- Greeting -->
+    <div class="impact-greeting">
+      <div class="greeting-time" id="greetingTime">Good morning</div>
+      <h1 class="greeting-headline">Your choices are<br><em>changing things.</em></h1>
+      <p class="greeting-sub">Here's the real-time story of your circular impact — yours, and the community's.</p>
+    </div>
+
+    <!-- Impact counters -->
+    <div class="impact-counters">
+      <div class="impact-counter" style="--counter-color:#84b45c">
+        <span class="ic-icon">🍾</span>
+        <div class="ic-val" data-target="2847">0</div>
+        <div class="ic-unit">containers returned</div>
+        <div class="ic-label">by your Re-turn community this week</div>
+        <div class="ic-delta delta-up">↑ 18%</div>
+      </div>
+      <div class="impact-counter" style="--counter-color:#e8b040">
+        <span class="ic-icon">🥬</span>
+        <div class="ic-val" data-target="412">0</div>
+        <div class="ic-unit">meals funded</div>
+        <div class="ic-label">via community FoodPack donations</div>
+        <div class="ic-delta delta-up">↑ 31%</div>
+      </div>
+      <div class="impact-counter" style="--counter-color:#6aacbc">
+        <span class="ic-icon">💶</span>
+        <div class="ic-val" data-target="1840">0</div>
+        <div class="ic-unit">€ value circulated</div>
+        <div class="ic-label">this week in Dublin</div>
+        <div class="ic-delta delta-up">↑ 24%</div>
+      </div>
+    </div>
+
+    <!-- Community pulse -->
+    <div class="community-section">
+      <div class="cs-header">
+        <div class="cs-title">Community pulse</div>
+        <div class="cs-live"><div class="live-dot"></div>LIVE</div>
+      </div>
+
+      <div class="activity-feed" id="activityFeed">
+        <!-- populated by JS -->
+      </div>
+
+      <div class="collective-bar">
+        <p class="cb-text">
+          <strong>This week's goal:</strong> 5,000 containers returned by the Dublin ORBIT community → 700 meals funded. You're at <strong>57%.</strong> 3 days left.
+        </p>
+        <div class="cb-progress-wrap">
+          <div class="cb-track">
+            <div class="cb-fill" id="cbFill"></div>
+          </div>
+          <div class="cb-labels">
+            <span>0</span><span>2,500</span><span>5,000 🎯</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Weekly journey -->
+    <div class="journey-section">
+      <div class="js-title">Your week so far</div>
+      <div class="journey-days" id="journeyDays"></div>
+    </div>
+
+    <!-- Behaviour nudges -->
+    <div class="nudges-section">
+      <div class="nudge-title">Your next best actions</div>
+
+      <div class="nudge-item">
+        <div class="nudge-icon food">🥗</div>
+        <div class="nudge-body">
+          <div class="nudge-label">What I Eat · +×3 credits</div>
+          <div class="nudge-text">The Happy Pear has a new seasonal produce pack — organic, Irish, package-free. Qualifies for Gold tier ×3 multiplier.</div>
+          <div class="nudge-reward">⊙ Earn up to 126 EcoCredits</div>
+        </div>
+        <button class="btn-nudge">View →</button>
+      </div>
+
+      <div class="nudge-item">
+        <div class="nudge-icon travel">🚲</div>
+        <div class="nudge-body">
+          <div class="nudge-label">How I Travel · streak bonus</div>
+          <div class="nudge-text">You've cycled 4 days in a row. One more day completes your Active Week badge — 50 bonus EcoCredits unlocked.</div>
+          <div class="nudge-reward">⊙ +50 bonus credits tomorrow</div>
+        </div>
+        <button class="btn-nudge">Track →</button>
+      </div>
+
+      <div class="nudge-item">
+        <div class="nudge-icon buy">🛍️</div>
+        <div class="nudge-body">
+          <div class="nudge-label">What I Buy · community challenge</div>
+          <div class="nudge-text">This week's community challenge: buy one thing second-hand. 847 people in Dublin have already completed it this week.</div>
+          <div class="nudge-reward">⊙ +30 credits + community badge</div>
+        </div>
+        <button class="btn-nudge">Join →</button>
+      </div>
+
+      <div class="nudge-item">
+        <div class="nudge-icon home">♻️</div>
+        <div class="nudge-body">
+          <div class="nudge-label">Container return · nearby kiosk</div>
+          <div class="nudge-text">There's a Re-turn kiosk 220m from you at Dunnes Stores, Ranelagh. Every bottle returned is a credit minted and a meal closer to someone who needs it.</div>
+          <div class="nudge-reward">⊙ 1 EcoCredit per container</div>
+        </div>
+        <button class="btn-nudge">Map →</button>
+      </div>
+    </div>
+
+    <!-- Donate impact -->
+    <div class="donate-section">
+      <div class="donate-eyebrow">Community Impact · Donate Mode</div>
+      <div class="donate-headline">The invisible solidarity<br>your credits are creating</div>
+      <p class="donate-sub">Every donation-mode user creates a ripple. Here's what the ORBIT community has collectively done since launch.</p>
+      <div class="donate-stats">
+        <div class="ds-item">
+          <div class="ds-val" data-target="4218">0</div>
+          <div class="ds-label">meals to vulnerable households</div>
+        </div>
+        <div class="ds-item">
+          <div class="ds-val" data-target="23">0</div>
+          <div class="ds-label">school programmes funded</div>
+        </div>
+        <div class="ds-item">
+          <div class="ds-val" data-target="189">0</div>
+          <div class="ds-label">community food boxes</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ORBIT rings visual -->
+    <div class="orbit-visual">
+      <div class="ov-title">Your circular impact orbit</div>
+      <div class="orbit-rings">
+        <div class="ring ring-1"></div>
+        <div class="ring ring-2"></div>
+        <div class="ring ring-3"></div>
+        <div class="ring-center">
+          <div class="ring-center-val">847</div>
+          <div class="ring-center-label">credits</div>
+        </div>
+      </div>
+      <div class="ring-legend">
+        <div class="rl-item"><div class="rl-dot" style="background:rgba(90,128,64,0.5)"></div>Containers</div>
+        <div class="rl-item"><div class="rl-dot" style="background:rgba(200,144,42,0.5)"></div>Purchases</div>
+        <div class="rl-item"><div class="rl-dot" style="background:rgba(106,172,188,0.5)"></div>Community</div>
+      </div>
+    </div>
+
+    <!-- Dublin hotspots -->
+    <div class="map-section">
+      <div class="map-title">Active return points near you</div>
+      <div class="map-placeholder">
+        <span class="map-icon">🗺️</span>
+        <p class="map-text">Dublin Re-turn kiosk map<br><span style="font-size:10px;opacity:0.6">Live map integration · Phase 2</span></p>
+      </div>
+      <div class="hotspot-grid">
+        <div class="hotspot">
+          <span class="hs-icon">🏪</span>
+          <div class="hs-name">Ranelagh</div>
+          <div class="hs-count">220m · open</div>
+        </div>
+        <div class="hotspot">
+          <span class="hs-icon">🛒</span>
+          <div class="hs-name">Rathmines</div>
+          <div class="hs-count">0.8km · open</div>
+        </div>
+        <div class="hotspot">
+          <span class="hs-icon">🏬</span>
+          <div class="hs-name">Dundrum</div>
+          <div class="hs-count">3.2km · open</div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- end impact-panel -->
+</div><!-- end wallet-grid -->
+
+<script>
+// ── Greeting time ──
+const hour = new Date().getHours();
+const greet = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
+document.getElementById('greetingTime').textContent = greet;
+
+// ── Animated counters ──
+function animateCounter(el, target, duration=1800, prefix='', suffix='') {
+  let start = null;
+  const step = (ts) => {
+    if (!start) start = ts;
+    const pct = Math.min((ts - start) / duration, 1);
+    const ease = 1 - Math.pow(1 - pct, 3);
+    el.textContent = prefix + Math.round(ease * target).toLocaleString() + suffix;
+    if (pct < 1) requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+}
+
+// Main balance
+setTimeout(() => animateCounter(document.getElementById('balanceCounter'), 847), 400);
+setTimeout(() => animateCounter(document.getElementById('bottlesCount'), 312), 600);
+setTimeout(() => animateCounter(document.getElementById('mealsCount'), 18), 800);
+setTimeout(() => animateCounter(document.getElementById('co2Count'), 47), 1000);
+setTimeout(() => animateCounter(document.getElementById('donatedCount'), 215), 1200);
+
+// Community counters
+document.querySelectorAll('.ic-val').forEach((el, i) => {
+  setTimeout(() => animateCounter(el, parseInt(el.dataset.target)), 500 + i*200);
+});
+
+// Donate stats
+document.querySelectorAll('.ds-val').forEach((el, i) => {
+  setTimeout(() => animateCounter(el, parseInt(el.dataset.target)), 1400 + i*300);
+});
+
+// Tier fill
+setTimeout(() => { document.getElementById('tierFill').style.width = '84.7%'; }, 600);
+
+// Collective bar
+setTimeout(() => { document.getElementById('cbFill').style.width = '57%'; }, 800);
+
+// ── Weekly journey ──
+const days = ['M','T','W','T','F','S','S'];
+const dayData = [
+  {status:'full',  credits:42, icon:'🍾'},
+  {status:'full',  credits:85, icon:'🛍️'},
+  {status:'partial',credits:28, icon:'🥗'},
+  {status:'full',  credits:63, icon:'🍾'},
+  {status:'today', credits:31, icon:'⟳'},
+  {status:'empty', credits:0, icon:''},
+  {status:'empty', credits:0, icon:''},
+];
+
+const jd = document.getElementById('journeyDays');
+days.forEach((d, i) => {
+  const data = dayData[i];
+  const cell = document.createElement('div');
+  cell.className = 'day-cell';
+  cell.innerHTML = `
+    <div class="day-label">${d}</div>
+    <div class="day-ring ${data.status}">${data.icon || ''}</div>
+    <div class="day-credits">${data.credits > 0 ? data.credits+'⊙' : '—'}</div>
+  `;
+  jd.appendChild(cell);
+});
+
+// ── Live activity feed ──
+const activities = [
+  {avatar:'🌿', color:'rgba(90,128,64,0.15)', name:'Aoife M.', action:'returned <strong>6 containers</strong> at Tesco Rathmines', credits:'+6⊙', time:'2 min ago'},
+  {avatar:'♻️', color:'rgba(200,144,42,0.15)', name:'Ciarán D.', action:'redeemed a <strong>Seasonal Produce Pack</strong> at Happy Pear', credits:'−42⊙', time:'8 min ago'},
+  {avatar:'❤️', color:'rgba(212,96,64,0.15)', name:'Saoirse K.', action:'donated <strong>120 credits</strong> to Capuchin Day Centre', credits:'', time:'15 min ago'},
+  {avatar:'🥗', color:'rgba(90,128,64,0.15)', name:'Donal F.', action:'earned <strong>×3 multiplier</strong> at Green Earth Organics', credits:'+90⊙', time:'22 min ago'},
+  {avatar:'🍾', color:'rgba(106,172,188,0.15)', name:'Mairéad B.', action:'completed <strong>Active Week badge</strong> — 5 days cycling', credits:'+50⊙', time:'34 min ago'},
+];
+
+const feed = document.getElementById('activityFeed');
+activities.forEach((a, i) => {
+  const item = document.createElement('div');
+  item.className = 'activity-item';
+  item.style.animationDelay = (0.8 + i*0.15)+'s';
+  item.innerHTML = `
+    <div class="ai-avatar" style="background:${a.color}">${a.avatar}</div>
+    <div class="ai-body">
+      <div class="ai-text"><strong>${a.name}</strong> ${a.action}</div>
+      <div class="ai-time">${a.time}</div>
+    </div>
+    ${a.credits ? `<div class="ai-credits">${a.credits}</div>` : ''}
+  `;
+  feed.appendChild(item);
+});
+
+// ── Mode select ──
+function selectMode(el) {
+  document.querySelectorAll('.mode-opt').forEach(o => o.classList.remove('active'));
+  el.classList.add('active');
+  const mode = el.querySelector('.mode-opt-label').textContent;
+  document.querySelector('.topbar-mode').textContent = 
+    mode==='Receive' ? '🌿 Receive mode' : 
+    mode==='Donate' ? '❤️ Donate mode' : '⚡ Split mode';
+}
+
+// ── Claim FoodPack ──
+function claimPack(btn, cost) {
+  const current = parseInt(document.getElementById('balanceCounter').textContent.replace(',',''));
+  if (current < cost) { btn.textContent = '✗'; btn.style.background='#d46040'; return; }
+  btn.textContent = '✓';
+  btn.style.background = '#5a8040';
+  btn.disabled = true;
+  document.getElementById('balanceCounter').textContent = (current - cost).toLocaleString();
+  const meals = parseInt(document.getElementById('mealsCount').textContent);
+  document.getElementById('mealsCount').textContent = meals + 1;
+}
+</script>
+</body>
+</html>
