@@ -1,0 +1,871 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ORBIT — A Digital Platform for Circular Participation</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,200;0,9..144,400;1,9..144,200;1,9..144,400&family=DM+Mono:wght@300;400;500&family=Instrument+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+/* ── SHARED TOKENS ── */
+:root {
+  /* Green Line (dark palette — kept exactly as original) */
+  --soil: #1a1a14;
+  --gl-moss: #2d3a1e;
+  --gl-leaf: #4a6741;
+  --gl-sage: #7a9e6e;
+  --gl-fern: #a8c49a;
+  --gl-mist: #d4e8cc;
+  --gl-cream: #f0ede4;
+  --gl-gold: #c8a84b;
+  --gl-amber: #e8b84b;
+  --gl-line: rgba(168,196,154,0.25);
+  --gl-glow: rgba(168,196,154,0.08);
+  /* Light palette (EcoQuiz warmth) */
+  --paper: #faf7ee;
+  --linen: #f4f0e4;
+  --warm:  #e8d4b0;
+  --ink:   #0f1409;
+  --bark:  #1e2710;
+  --moss:  #2e3d18;
+  --leaf:  #4a6728;
+  --sage:  #7a9e52;
+  --fern:  #aac47a;
+  --mist:  #d6e8b8;
+  --gold:  #c49a2a;
+  --amber: #e8b83a;
+  --sky:   #5a9eaa;
+  --coral: #c4634a;
+  --line:  rgba(74,103,40,0.18);
+  --glow:  rgba(170,196,122,0.1);
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+html { scroll-behavior:smooth; }
+body { font-family:'Instrument Sans',sans-serif; overflow:hidden; height:100vh; width:100vw; }
+
+/* ══════════════════════════════
+   SPLASH
+══════════════════════════════ */
+#splash {
+  position:fixed; inset:0; z-index:300;
+  background:var(--soil);
+  display:flex; flex-direction:column;
+  align-items:center; justify-content:center;
+  text-align:center; padding:40px;
+  transition:opacity 0.9s ease, transform 0.9s ease;
+}
+#splash.exit { opacity:0; transform:scale(1.03); pointer-events:none; }
+
+.sp-eye {
+  font-family:'DM Mono',monospace;
+  font-size:10px; letter-spacing:0.4em; text-transform:uppercase;
+  color:var(--gl-sage); margin-bottom:32px;
+  opacity:0; animation:riseIn 1s ease 0.3s forwards;
+}
+.sp-title {
+  font-family:'Fraunces',serif;
+  font-size:clamp(60px,11vw,130px);
+  font-weight:200; line-height:0.88; letter-spacing:-0.03em;
+  color:var(--gl-cream);
+  opacity:0; animation:riseIn 1s ease 0.6s forwards;
+}
+.sp-title em { font-style:italic; color:var(--gl-fern); }
+.sp-sub {
+  font-family:'DM Mono',monospace; font-size:11px; line-height:2;
+  color:rgba(168,196,154,0.45); max-width:520px; margin:28px auto 0;
+  opacity:0; animation:riseIn 1s ease 0.9s forwards;
+}
+.sp-btn {
+  margin-top:48px;
+  font-family:'DM Mono',monospace; font-size:10px;
+  letter-spacing:0.25em; text-transform:uppercase;
+  padding:16px 52px; background:transparent;
+  border:1px solid rgba(168,196,154,0.35); color:var(--gl-fern);
+  cursor:pointer; position:relative; overflow:hidden;
+  transition:color 0.3s ease, border-color 0.3s ease;
+  opacity:0; animation:riseIn 1s ease 1.2s forwards;
+}
+.sp-btn::before {
+  content:''; position:absolute; inset:0;
+  background:var(--gl-leaf); transform:scaleX(0); transform-origin:left;
+  transition:transform 0.4s ease; z-index:-1;
+}
+.sp-btn:hover { color:var(--gl-cream); border-color:var(--gl-leaf); }
+.sp-btn:hover::before { transform:scaleX(1); }
+.sp-credit {
+  position:absolute; bottom:28px;
+  font-family:'DM Mono',monospace; font-size:9px;
+  letter-spacing:0.2em; color:rgba(168,196,154,0.25);
+  opacity:0; animation:riseIn 1s ease 1.5s forwards;
+}
+
+/* ══════════════════════════════
+   APP SHELL
+══════════════════════════════ */
+#app {
+  position:fixed; inset:0;
+  display:flex; flex-direction:column;
+  opacity:0; pointer-events:none;
+  transition:opacity 0.8s ease 0.15s;
+}
+#app.visible { opacity:1; pointer-events:all; }
+
+/* ── NAV ── */
+.app-nav {
+  height:52px; flex-shrink:0;
+  display:flex; align-items:center;
+  padding:0 28px; gap:0;
+  position:relative; z-index:50;
+  /* nav bg transitions with active view */
+  transition:background 0.5s ease, border-color 0.5s ease;
+}
+.app-nav.dark {
+  background:rgba(20,20,16,0.96);
+  backdrop-filter:blur(20px);
+  border-bottom:1px solid var(--gl-line);
+}
+.app-nav.light {
+  background:rgba(250,247,238,0.96);
+  backdrop-filter:blur(20px);
+  border-bottom:1px solid var(--line);
+}
+
+.nav-logo {
+  font-family:'Fraunces',serif; font-size:21px;
+  font-weight:200; font-style:italic;
+  margin-right:36px; flex-shrink:0;
+  transition:color 0.4s ease;
+}
+.dark .nav-logo { color:var(--gl-fern); }
+.light .nav-logo { color:var(--moss); }
+
+.nav-tabs { display:flex; gap:0; flex:1; overflow-x:auto; scrollbar-width:none; }
+.nav-tabs::-webkit-scrollbar { display:none; }
+
+.nav-tab {
+  font-family:'DM Mono',monospace; font-size:9px;
+  letter-spacing:0.18em; text-transform:uppercase;
+  padding:0 16px; height:52px;
+  display:flex; align-items:center; gap:6px;
+  cursor:pointer; white-space:nowrap;
+  background:none; border:none;
+  border-bottom:2px solid transparent;
+  transition:color 0.2s ease, border-color 0.2s ease;
+}
+.dark  .nav-tab        { color:rgba(168,196,154,0.3); }
+.dark  .nav-tab:hover  { color:rgba(168,196,154,0.7); }
+.dark  .nav-tab.active { color:var(--gl-fern); border-bottom-color:var(--gl-fern); }
+.light .nav-tab        { color:rgba(46,61,24,0.35); }
+.light .nav-tab:hover  { color:var(--moss); }
+.light .nav-tab.active { color:var(--leaf); border-bottom-color:var(--leaf); }
+
+.tab-num { font-size:8px; opacity:0.45; }
+
+.nav-badge {
+  margin-left:auto; flex-shrink:0;
+  font-family:'DM Mono',monospace; font-size:9px;
+  letter-spacing:0.12em; padding:4px 12px;
+  transition:color 0.4s ease, border-color 0.4s ease, background 0.4s ease;
+}
+.dark  .nav-badge { color:var(--gl-amber); border:1px solid rgba(200,168,75,0.25); background:rgba(200,168,75,0.05); }
+.light .nav-badge { color:var(--gold);     border:1px solid rgba(196,154,42,0.25); background:rgba(196,154,42,0.05); }
+
+/* ── CONTENT ── */
+.app-content { flex:1; overflow:hidden; position:relative; }
+
+.view {
+  position:absolute; inset:0; overflow-y:auto; overflow-x:hidden;
+  opacity:0; pointer-events:none;
+  transform:translateY(10px);
+  transition:opacity 0.45s ease, transform 0.45s ease;
+}
+.view.active { opacity:1; pointer-events:all; transform:translateY(0); }
+
+/* ── TICKER FOOTER ── */
+.app-ticker {
+  height:34px; flex-shrink:0;
+  display:flex; align-items:center;
+  overflow:hidden;
+  transition:background 0.5s ease, border-color 0.5s ease;
+}
+.dark  .app-ticker { background:rgba(26,26,20,0.7); border-top:1px solid var(--gl-line); }
+.light .app-ticker { background:rgba(232,212,176,0.5); border-top:1px solid var(--line); }
+
+.ticker-text {
+  font-family:'Fraunces',serif; font-size:11px; font-style:italic;
+  white-space:nowrap;
+  animation:tickerScroll 32s linear infinite;
+  transition:color 0.4s ease;
+}
+.dark  .ticker-text { color:rgba(168,196,154,0.35); }
+.light .ticker-text { color:rgba(74,103,40,0.45); }
+@keyframes tickerScroll {
+  from { transform:translateX(100vw); }
+  to   { transform:translateX(-100%); }
+}
+
+/* ══════════════════════════════
+   VIEW 00 — GREEN LINE (dark, original)
+══════════════════════════════ */
+#view-greenline {
+  background:var(--soil);
+  color:var(--gl-cream);
+  font-family:'DM Mono',monospace;
+  cursor:crosshair;
+}
+#view-greenline::before {
+  content:''; position:fixed; inset:0; pointer-events:none; z-index:0;
+  background:
+    radial-gradient(ellipse 80% 60% at 20% 10%, rgba(45,58,30,0.6) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 80% at 80% 90%, rgba(26,26,20,0.8) 0%, transparent 50%),
+    radial-gradient(ellipse 40% 40% at 60% 30%, rgba(74,103,65,0.15) 0%, transparent 50%);
+}
+
+.gl-wrap { position:relative; z-index:1; max-width:1200px; margin:0 auto; padding:60px 40px; }
+
+.gl-header { text-align:center; margin-bottom:80px; opacity:0; animation:fadeUp 1s ease 0.2s forwards; }
+.gl-eyebrow { font-size:10px; letter-spacing:0.3em; color:var(--gl-sage); text-transform:uppercase; margin-bottom:16px; }
+.gl-header h1 {
+  font-family:'Fraunces',serif; font-size:clamp(48px,8vw,88px);
+  font-weight:300; line-height:0.95; letter-spacing:-0.02em; color:var(--gl-cream);
+}
+.gl-header h1 em { font-style:italic; color:var(--gl-fern); }
+.gl-sub { margin-top:20px; font-size:11px; letter-spacing:0.15em; color:var(--gl-sage); opacity:0.7; }
+
+/* Spine */
+.green-line-body { position:relative; }
+.spine {
+  position:absolute; left:50%; top:0; bottom:0; width:2px;
+  background:linear-gradient(to bottom, transparent, var(--gl-leaf) 5%, var(--gl-sage) 40%, var(--gl-fern) 70%, var(--gl-gold) 90%, transparent);
+  transform:translateX(-50%);
+}
+.spine::after {
+  content:''; position:absolute; left:50%; top:0; bottom:0;
+  width:1px; background:inherit; filter:blur(6px);
+  transform:translateX(-50%); opacity:0.5;
+}
+
+/* Phases */
+.phase {
+  display:grid; grid-template-columns:1fr 60px 1fr;
+  align-items:start; margin-bottom:0;
+  opacity:0; transform:translateY(30px);
+  transition:opacity 0.7s ease, transform 0.7s ease;
+}
+.phase.visible { opacity:1; transform:translateY(0); }
+.phase:nth-child(odd)  .phase-content { grid-column:1; text-align:right; padding-right:40px; }
+.phase:nth-child(odd)  .phase-node   { grid-column:2; }
+.phase:nth-child(odd)  .phase-detail { grid-column:3; padding-left:40px; }
+.phase:nth-child(even) .phase-content { grid-column:3; text-align:left; padding-left:40px; order:3; }
+.phase:nth-child(even) .phase-node   { grid-column:2; order:2; }
+.phase:nth-child(even) .phase-detail { grid-column:1; text-align:right; padding-right:40px; order:1; }
+
+.phase-node { display:flex; flex-direction:column; align-items:center; padding:20px 0; position:relative; z-index:2; }
+.node-dot {
+  width:20px; height:20px; border-radius:50%;
+  border:2px solid var(--gl-sage); background:var(--soil);
+  position:relative; cursor:pointer;
+  transition:all 0.3s ease; flex-shrink:0;
+  animation:nodePulse 3s ease-in-out infinite;
+}
+.node-dot::before { content:''; position:absolute; inset:3px; border-radius:50%; background:var(--gl-sage); transition:all 0.3s ease; }
+.node-dot:hover { border-color:var(--gl-fern); box-shadow:0 0 20px rgba(168,196,154,0.4); transform:scale(1.4); }
+.node-dot:hover::before { background:var(--gl-fern); }
+.phase-label { font-size:9px; letter-spacing:0.2em; color:var(--gl-leaf); text-transform:uppercase; margin-top:8px; white-space:nowrap; }
+.phase:nth-child(2) .node-dot { animation-delay:0.5s; }
+.phase:nth-child(3) .node-dot { animation-delay:1s; }
+.phase:nth-child(4) .node-dot { animation-delay:1.5s; }
+.phase:nth-child(5) .node-dot { animation-delay:2s; }
+
+.phase-content { padding-top:12px; padding-bottom:40px; }
+.phase-tag { font-size:9px; letter-spacing:0.25em; text-transform:uppercase; color:var(--gl-gold); margin-bottom:8px; display:block; }
+.phase-title { font-family:'Fraunces',serif; font-size:clamp(20px,3vw,28px); font-weight:300; color:var(--gl-cream); line-height:1.2; margin-bottom:12px; }
+.phase-title em { font-style:italic; color:var(--gl-fern); }
+.phase-desc { font-size:11px; line-height:1.8; color:var(--gl-sage); max-width:320px; }
+.phase:nth-child(odd) .phase-desc { margin-left:auto; }
+.phase-detail { padding-top:12px; padding-bottom:40px; }
+.detail-card { background:var(--gl-glow); border:1px solid var(--gl-line); border-radius:4px; padding:20px; transition:all 0.3s ease; }
+.detail-card:hover { background:rgba(168,196,154,0.06); border-color:rgba(168,196,154,0.35); }
+.detail-label { font-size:9px; letter-spacing:0.2em; color:var(--gl-leaf); text-transform:uppercase; margin-bottom:12px; }
+.tech-pill {
+  display:inline-block; font-size:9px; letter-spacing:0.1em;
+  padding:3px 8px; border:1px solid var(--gl-line); border-radius:2px;
+  color:var(--gl-fern); margin:2px; background:rgba(74,103,65,0.1); transition:all 0.2s ease;
+}
+.tech-pill:hover { border-color:var(--gl-fern); background:rgba(74,103,65,0.2); }
+.metric { margin-top:12px; font-size:22px; font-family:'Fraunces',serif; font-weight:600; color:var(--gl-amber); line-height:1; }
+.metric-label { font-size:9px; color:var(--gl-sage); letter-spacing:0.15em; margin-top:4px; }
+
+/* Impact & equity */
+.gl-impact { margin-top:60px; opacity:0; animation:fadeUp 1s ease 1.8s forwards; }
+.impact-header { text-align:center; margin-bottom:40px; }
+.impact-title { font-family:'Fraunces',serif; font-size:clamp(28px,4vw,42px); font-weight:300; font-style:italic; color:var(--gl-fern); margin-bottom:8px; }
+.impact-sub { font-size:10px; letter-spacing:0.25em; color:var(--gl-sage); text-transform:uppercase; }
+.flow-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:2px; margin-top:20px; }
+.flow-cell { background:var(--gl-glow); border:1px solid var(--gl-line); padding:28px 24px; transition:all 0.4s ease; cursor:default; position:relative; overflow:hidden; }
+.flow-cell::before { content:''; position:absolute; bottom:0; left:0; right:0; height:2px; background:linear-gradient(to right, transparent, var(--gl-leaf), transparent); opacity:0; transition:opacity 0.3s ease; }
+.flow-cell:hover { background:rgba(168,196,154,0.06); }
+.flow-cell:hover::before { opacity:1; }
+.flow-icon { font-size:28px; margin-bottom:16px; display:block; }
+.flow-title { font-family:'Fraunces',serif; font-size:18px; font-weight:300; color:var(--gl-cream); margin-bottom:8px; }
+.flow-desc { font-size:10px; line-height:1.8; color:var(--gl-sage); }
+
+.equity-section { margin-top:60px; padding:40px; border:1px solid var(--gl-line); background:var(--gl-glow); display:grid; grid-template-columns:1fr 1fr; gap:60px; align-items:center; opacity:0; animation:fadeUp 1s ease 2.2s forwards; }
+.equity-title { font-family:'Fraunces',serif; font-size:32px; font-weight:300; font-style:italic; color:var(--gl-cream); line-height:1.2; margin-bottom:12px; }
+.equity-left p { font-size:11px; line-height:1.9; color:var(--gl-sage); }
+.equity-right { display:flex; flex-direction:column; gap:16px; }
+.equity-bar-item { display:flex; flex-direction:column; gap:6px; }
+.equity-bar-label { display:flex; justify-content:space-between; font-size:10px; color:var(--gl-fern); letter-spacing:0.1em; }
+.equity-bar-track { height:3px; background:rgba(168,196,154,0.1); border-radius:2px; overflow:hidden; }
+.equity-bar-fill { height:100%; border-radius:2px; background:linear-gradient(to right, var(--gl-leaf), var(--gl-fern)); width:0; transition:width 1.5s cubic-bezier(0.4,0,0.2,1); }
+.equity-bar-fill.animate { width:var(--target-width); }
+
+.gl-footer { margin-top:80px; text-align:center; padding:40px 0; border-top:1px solid var(--gl-line); opacity:0; animation:fadeUp 1s ease 2.5s forwards; }
+.gl-footer-orbit { font-family:'Fraunces',serif; font-size:48px; font-weight:300; color:var(--gl-line); letter-spacing:0.3em; }
+.gl-footer-tag { font-size:10px; letter-spacing:0.3em; color:var(--gl-leaf); text-transform:uppercase; margin-top:8px; }
+
+/* Navigate forward CTA */
+.gl-cta { margin-top:60px; text-align:center; opacity:0; animation:fadeUp 1s ease 2.8s forwards; }
+.gl-cta p { font-family:'DM Mono',monospace; font-size:10px; letter-spacing:0.15em; color:rgba(168,196,154,0.4); margin-bottom:16px; }
+.gl-cta-btn {
+  font-family:'DM Mono',monospace; font-size:10px; letter-spacing:0.2em; text-transform:uppercase;
+  padding:14px 40px; background:transparent; border:1px solid var(--gl-line);
+  color:var(--gl-fern); cursor:pointer; transition:all 0.3s ease;
+}
+.gl-cta-btn:hover { background:var(--gl-leaf); border-color:var(--gl-leaf); color:var(--gl-cream); }
+
+/* Tooltip */
+.gl-tooltip {
+  position:fixed; background:rgba(26,26,20,0.95); border:1px solid var(--gl-leaf);
+  padding:12px 16px; font-family:'DM Mono',monospace; font-size:10px; color:var(--gl-fern);
+  pointer-events:none; opacity:0; transition:opacity 0.2s ease; z-index:200;
+  max-width:200px; line-height:1.7; letter-spacing:0.05em;
+}
+
+/* Legend */
+.gl-legend {
+  position:fixed; top:66px; right:28px; z-index:10;
+  background:rgba(26,26,20,0.9); border:1px solid var(--gl-line);
+  padding:16px; font-family:'DM Mono',monospace; font-size:10px;
+  backdrop-filter:blur(10px);
+  opacity:0; animation:fadeIn 1s ease 1.5s forwards;
+}
+.gl-legend-title { letter-spacing:0.2em; color:var(--gl-sage); text-transform:uppercase; margin-bottom:10px; font-size:9px; }
+.gl-legend-item { display:flex; align-items:center; gap:8px; margin-bottom:7px; color:var(--gl-fern); }
+.gl-legend-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+
+/* Mobile */
+@media(max-width:768px) {
+  .phase { grid-template-columns:1fr; }
+  .phase:nth-child(odd) .phase-content,
+  .phase:nth-child(even) .phase-content { grid-column:1; text-align:left; padding:0 0 20px 0; order:2; }
+  .phase:nth-child(odd) .phase-node,
+  .phase:nth-child(even) .phase-node { grid-column:1; order:1; flex-direction:row; gap:12px; }
+  .phase:nth-child(odd) .phase-detail,
+  .phase:nth-child(even) .phase-detail { grid-column:1; text-align:left; padding:0 0 20px 0; order:3; }
+  .spine { left:10px; }
+  .flow-grid { grid-template-columns:1fr; }
+  .equity-section { grid-template-columns:1fr; gap:30px; }
+  .gl-legend { display:none; }
+}
+
+/* ══════════════════════════════
+   VIEWS 01–04  (light / warm palette)
+══════════════════════════════ */
+#view-quiz, #view-wall, #view-wallet, #view-loop {
+  background:var(--paper);
+  color:var(--ink);
+}
+
+/* Shared section wrapper */
+.lv-wrap { max-width:1100px; margin:0 auto; padding:52px 44px; }
+@media(max-width:700px){ .lv-wrap { padding:32px 20px; } }
+
+.lv-eyebrow { font-family:'DM Mono',monospace; font-size:9px; letter-spacing:0.3em; text-transform:uppercase; color:var(--gold); margin-bottom:14px; }
+.lv-title { font-family:'Fraunces',serif; font-size:clamp(32px,5vw,60px); font-weight:200; line-height:0.95; letter-spacing:-0.02em; color:var(--ink); margin-bottom:14px; }
+.lv-title em { font-style:italic; color:var(--leaf); }
+.lv-desc { font-family:'DM Mono',monospace; font-size:11px; line-height:1.9; color:rgba(46,61,24,0.5); max-width:520px; }
+
+.lv-divider { height:1px; background:var(--line); margin:40px 0; }
+
+/* Cards */
+.lv-grid-3 { display:grid; grid-template-columns:repeat(3,1fr); gap:2px; }
+.lv-grid-2 { display:grid; grid-template-columns:repeat(2,1fr); gap:2px; }
+@media(max-width:700px){ .lv-grid-3,.lv-grid-2 { grid-template-columns:1fr; } }
+
+.lv-card {
+  background:white; border:1px solid var(--line);
+  padding:24px 20px; transition:all 0.25s ease;
+}
+.lv-card:hover { border-color:var(--sage); box-shadow:0 4px 20px rgba(74,103,40,0.08); }
+.lv-card-icon { font-size:26px; display:block; margin-bottom:12px; }
+.lv-card-tag { font-family:'DM Mono',monospace; font-size:8px; letter-spacing:0.2em; text-transform:uppercase; color:var(--gold); margin-bottom:6px; }
+.lv-card-title { font-family:'Fraunces',serif; font-size:18px; font-weight:200; font-style:italic; color:var(--ink); margin-bottom:8px; line-height:1.2; }
+.lv-card-desc { font-family:'DM Mono',monospace; font-size:10px; line-height:1.7; color:rgba(46,61,24,0.5); }
+.lv-card-val { font-family:'Fraunces',serif; font-size:28px; color:var(--amber); margin-top:12px; line-height:1; }
+.lv-card-val-label { font-family:'DM Mono',monospace; font-size:8px; color:var(--sage); margin-top:3px; }
+
+/* Buttons */
+.btn-primary {
+  font-family:'DM Mono',monospace; font-size:10px; letter-spacing:0.2em; text-transform:uppercase;
+  padding:14px 36px; background:var(--leaf); color:white; border:none; cursor:pointer; transition:all 0.3s ease;
+}
+.btn-primary:hover { background:var(--moss); transform:translateY(-1px); box-shadow:0 6px 20px rgba(46,61,24,0.2); }
+.btn-outline {
+  font-family:'DM Mono',monospace; font-size:10px; letter-spacing:0.2em; text-transform:uppercase;
+  padding:14px 36px; background:transparent; color:var(--leaf); border:1px solid var(--line); cursor:pointer; transition:all 0.3s ease;
+}
+.btn-outline:hover { border-color:var(--leaf); background:rgba(74,103,40,0.05); }
+
+/* Resonance pills */
+.res-pill {
+  display:inline-block; padding:5px 14px;
+  font-family:'DM Mono',monospace; font-size:9px; letter-spacing:0.15em;
+  border-radius:2px; margin-bottom:10px;
+}
+.res-high   { background:rgba(74,103,40,0.1); color:var(--leaf); border:1px solid rgba(74,103,40,0.2); }
+.res-mod    { background:rgba(196,154,42,0.1); color:var(--gold); border:1px solid rgba(196,154,42,0.2); }
+.res-low    { background:rgba(196,99,74,0.1);  color:var(--coral);border:1px solid rgba(196,99,74,0.2); }
+
+/* Revenue rows */
+.rev-row { display:flex; align-items:center; gap:16px; padding:16px 20px; background:white; border:1px solid var(--line); margin-bottom:2px; transition:all 0.2s ease; }
+.rev-row:hover { border-color:var(--sage); }
+.rev-icon { font-size:22px; flex-shrink:0; }
+.rev-label { font-family:'DM Mono',monospace; font-size:10px; color:rgba(46,61,24,0.6); flex:1; }
+.rev-amount { font-family:'Fraunces',serif; font-size:22px; color:var(--amber); }
+
+/* Algo bars */
+.algo-bar-item { margin-bottom:14px; }
+.algo-bar-label { display:flex; justify-content:space-between; font-family:'DM Mono',monospace; font-size:9px; color:var(--sage); margin-bottom:5px; }
+.algo-bar-track { height:3px; background:rgba(74,103,40,0.1); border-radius:2px; overflow:hidden; }
+.algo-bar-fill { height:100%; border-radius:2px; background:linear-gradient(to right, var(--leaf), var(--fern)); width:0; transition:width 1.6s cubic-bezier(0.4,0,0.2,1); }
+
+/* Feed rows */
+.feed-row { display:flex; align-items:center; gap:12px; padding:11px 0; border-bottom:1px solid rgba(74,103,40,0.07); font-family:'DM Mono',monospace; font-size:10px; }
+.feed-row:last-child { border-bottom:none; }
+.feed-em { font-size:16px; flex-shrink:0; }
+.feed-txt { flex:1; color:rgba(46,61,24,0.6); line-height:1.5; }
+.feed-txt strong { color:var(--leaf); }
+.feed-time { font-size:8px; color:rgba(46,61,24,0.3); }
+
+/* Wallet card */
+.wallet-card {
+  border-radius:14px;
+  background:linear-gradient(135deg, #1e2710 0%, #2e3d18 60%, #4a6728 100%);
+  padding:26px 22px; color:white; position:relative; overflow:hidden;
+  box-shadow:0 16px 40px rgba(46,61,24,0.25);
+}
+.wallet-card::after { content:'◌'; position:absolute; right:-15px; bottom:-25px; font-size:130px; color:rgba(255,255,255,0.04); line-height:1; pointer-events:none; }
+.wc-label { font-family:'DM Mono',monospace; font-size:9px; letter-spacing:0.2em; opacity:0.5; margin-bottom:12px; }
+.wc-balance { font-family:'Fraunces',serif; font-size:48px; font-weight:200; line-height:1; letter-spacing:-0.02em; }
+.wc-unit { font-family:'DM Mono',monospace; font-size:10px; opacity:0.5; margin-bottom:16px; }
+.wc-tier { display:inline-flex; align-items:center; gap:6px; font-family:'DM Mono',monospace; font-size:9px; padding:4px 10px; background:rgba(255,255,255,0.1); border-radius:12px; }
+
+/* Steps (how it works) */
+.step-row { display:grid; grid-template-columns:64px 1fr; gap:0; border:1px solid var(--line); background:white; margin-bottom:2px; transition:all 0.2s ease; }
+.step-row:hover { border-color:var(--sage); }
+.step-num { display:flex; align-items:center; justify-content:center; background:rgba(74,103,40,0.06); border-right:1px solid var(--line); font-family:'Fraunces',serif; font-size:28px; font-weight:200; color:var(--leaf); padding:28px 12px; }
+.step-body { padding:24px 28px; }
+.step-tag { font-family:'DM Mono',monospace; font-size:8px; letter-spacing:0.22em; text-transform:uppercase; color:var(--gold); margin-bottom:6px; }
+.step-title { font-family:'Fraunces',serif; font-size:20px; font-weight:200; font-style:italic; color:var(--ink); margin-bottom:6px; }
+.step-desc { font-family:'DM Mono',monospace; font-size:10px; line-height:1.8; color:rgba(46,61,24,0.5); }
+.step-token { display:inline-flex; align-items:center; gap:5px; margin-top:10px; font-family:'DM Mono',monospace; font-size:9px; color:var(--gold); padding:4px 10px; border:1px solid rgba(196,154,42,0.2); background:rgba(196,154,42,0.05); }
+
+/* Manifesto block */
+.manifesto-block { margin-top:56px; padding:40px 44px; background:rgba(46,61,24,0.05); border:1px solid var(--line); }
+.manifesto-block blockquote { font-family:'Fraunces',serif; font-size:clamp(16px,2.2vw,22px); font-weight:200; font-style:italic; color:var(--moss); line-height:1.6; }
+.manifesto-block cite { display:block; font-family:'DM Mono',monospace; font-size:9px; letter-spacing:0.18em; text-transform:uppercase; color:var(--sage); margin-top:14px; font-style:normal; }
+
+/* Act Now links grid */
+.actnow-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:2px; margin-top:24px; }
+@media(max-width:600px){ .actnow-grid { grid-template-columns:1fr 1fr; } }
+.an-card { background:white; border:1px solid var(--line); padding:18px 16px; text-decoration:none; display:block; transition:all 0.25s ease; position:relative; }
+.an-card::after { content:'↗'; position:absolute; top:12px; right:14px; font-size:12px; color:var(--line); transition:all 0.2s ease; }
+.an-card:hover { border-color:var(--leaf); background:rgba(74,103,40,0.04); }
+.an-card:hover::after { color:var(--leaf); transform:translate(2px,-2px); }
+.an-icon { font-size:20px; display:block; margin-bottom:7px; }
+.an-cat { font-family:'DM Mono',monospace; font-size:8px; letter-spacing:0.18em; text-transform:uppercase; color:var(--gold); margin-bottom:4px; }
+.an-title { font-family:'Fraunces',serif; font-size:15px; font-weight:200; color:var(--ink); }
+
+/* Counters */
+.counter-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:2px; }
+@media(max-width:700px){ .counter-grid { grid-template-columns:repeat(2,1fr); } }
+.counter-cell { background:white; border:1px solid var(--line); padding:20px 16px; position:relative; overflow:hidden; }
+.counter-cell::before { content:''; position:absolute; top:0; left:0; right:0; height:2px; background:var(--cc-color,var(--fern)); }
+.cc-icon { font-size:20px; display:block; margin-bottom:8px; }
+.cc-val { font-family:'Fraunces',serif; font-size:32px; line-height:1; color:var(--ink); }
+.cc-label { font-family:'DM Mono',monospace; font-size:9px; color:rgba(46,61,24,0.45); margin-top:4px; }
+
+/* ══ ANIMATIONS ══ */
+@keyframes riseIn { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
+@keyframes fadeUp  { from{opacity:0;transform:translateY(24px)} to{opacity:1;transform:translateY(0)} }
+@keyframes fadeIn  { from{opacity:0} to{opacity:1} }
+@keyframes nodePulse { 0%,100%{box-shadow:0 0 0 0 rgba(168,196,154,0.3)} 50%{box-shadow:0 0 0 8px rgba(168,196,154,0)} }
+</style>
+</head>
+<body>
+
+<!-- ══ SPLASH ══ -->
+<div id="splash">
+  <div class="sp-eye">Nayara Cristine Pinheiro Reis · Trinity College Dublin · 2026</div>
+  <h1 class="sp-title">ORBIT<br><em>lives here.</em></h1>
+  <p class="sp-sub">A digital platform for circular participation in Ireland's Deposit Return System.<br>From a returned bottle → a meal on a table → a policy lever.<br>€66.7M in unclaimed deposits, redistributed democratically.</p>
+  <button class="sp-btn" onclick="enterApp()">Enter ORBIT →</button>
+  <div class="sp-credit">Nayara Cristine Pinheiro Reis · Climate Entrepreneurship · Trinity College Dublin</div>
+</div>
+
+<!-- ══ APP ══ -->
+<div id="app">
+  <nav class="app-nav dark" id="appNav">
+    <div class="nav-logo">ORBIT</div>
+    <div class="nav-tabs">
+      <button class="nav-tab active" onclick="showView('greenline',this)"><span class="tab-num">00</span> Green Line</button>
+      <button class="nav-tab" onclick="showView('quiz',this)"><span class="tab-num">01</span> EcoQuiz</button>
+      <button class="nav-tab" onclick="showView('wall',this)"><span class="tab-num">02</span> Green Wall</button>
+      <button class="nav-tab" onclick="showView('wallet',this)"><span class="tab-num">03</span> EcoWallet</button>
+      <button class="nav-tab" onclick="showView('loop',this)"><span class="tab-num">04</span> The Loop</button>
+    </div>
+    <div class="nav-badge" id="navBadge">€66.7M · unclaimed · redistributable</div>
+  </nav>
+
+  <div class="app-content">
+
+    <!-- ══ VIEW 00: GREEN LINE ══ -->
+    <div class="view active" id="view-greenline">
+      <div class="gl-legend" id="glLegend">
+        <div class="gl-legend-title">System Layers</div>
+        <div class="gl-legend-item"><div class="gl-legend-dot" style="background:#4a6741"></div>Physical</div>
+        <div class="gl-legend-item"><div class="gl-legend-dot" style="background:#7eb8c4"></div>Digital</div>
+        <div class="gl-legend-item"><div class="gl-legend-dot" style="background:#c8a84b"></div>Intelligence</div>
+        <div class="gl-legend-item"><div class="gl-legend-dot" style="background:#d4735a"></div>Redistribution</div>
+        <div class="gl-legend-item"><div class="gl-legend-dot" style="background:#a8c49a"></div>Policy</div>
+      </div>
+      <div class="gl-tooltip" id="glTooltip"></div>
+      <div class="gl-wrap">
+        <div class="gl-header">
+          <div class="gl-eyebrow">ORBIT · Green Line · System Architecture</div>
+          <h1>The <em>living</em><br>circular loop</h1>
+          <div class="gl-sub">From a returned bottle → to a meal on a table → to a policy lever</div>
+        </div>
+        <div class="green-line-body" id="greenLineBody">
+          <div class="spine"></div>
+          <div class="phase" data-phase="1">
+            <div class="phase-content"><span class="phase-tag">Layer 01 · Physical</span><h2 class="phase-title"><em>Return</em><br>Infrastructure</h2><p class="phase-desc">The physical act that starts the loop. Containers returned via Re-turn Ireland's kiosk network generate verified deposit credits — the raw material of the whole system.</p></div>
+            <div class="phase-node"><div class="node-dot" data-tip="Re-turn Ireland integration via API. Each container scan generates a verified deposit token — the first signal in ORBIT's chain." style="border-color:#4a6741"></div><span class="phase-label">01</span></div>
+            <div class="phase-detail"><div class="detail-card"><div class="detail-label">Tech Stack</div><span class="tech-pill">Re-turn API</span><span class="tech-pill">QR / Barcode Scan</span><span class="tech-pill">Kiosk SDK</span><div class="metric">€66.7M</div><div class="metric-label">unclaimed deposit value annually</div></div></div>
+          </div>
+          <div class="phase" data-phase="2">
+            <div class="phase-content"><span class="phase-tag">Layer 02 · Digital</span><h2 class="phase-title"><em>EcoWallet</em><br>Identity Layer</h2><p class="phase-desc">At onboarding, users choose their mode: receive EcoCredits or donate to community. A non-tradeable, soulbound wallet is created — tied to behaviour, not money.</p></div>
+            <div class="phase-node"><div class="node-dot" data-tip="Soulbound EcoWallet: non-tradeable tokens prevent speculation & gaming. Two pathways: Receive (EcoCredits → food) or Donate (value → vulnerable households)." style="border-color:#7eb8c4"></div><span class="phase-label">02</span></div>
+            <div class="phase-detail"><div class="detail-card"><div class="detail-label">Architecture</div><span class="tech-pill">Soulbound Tokens</span><span class="tech-pill">Two-mode Onboarding</span><span class="tech-pill">Receive / Donate</span><div class="metric">2 paths</div><div class="metric-label">inclusive by design</div></div></div>
+          </div>
+          <div class="phase" data-phase="3">
+            <div class="phase-content"><span class="phase-tag">Layer 03 · Intelligence</span><h2 class="phase-title"><em>EcoQuiz</em><br>Footprint Engine</h2><p class="phase-desc">18 questions across 9 life dimensions. Score 0–54 maps to a Resonance Level that unlocks a personalised behaviour journey — not just a label.</p></div>
+            <div class="phase-node"><div class="node-dot" data-tip="9 categories × 2 questions. Score → Resonance tier → personalised behaviour journey. Connected to Act Now Collective resource URLs per category." style="border-color:#c8a84b"></div><span class="phase-label">03</span></div>
+            <div class="phase-detail"><div class="detail-card"><div class="detail-label">9 Dimensions</div><span class="tech-pill">Mind & Body</span><span class="tech-pill">What I Eat</span><span class="tech-pill">How I Travel</span><span class="tech-pill">What I Wear</span><span class="tech-pill">What I Buy</span><span class="tech-pill">Who I Care For</span><span class="tech-pill">Where I Work</span><span class="tech-pill">How I Vote</span><div class="metric">54 pts</div><div class="metric-label">max score · radar chart output</div></div></div>
+          </div>
+          <div class="phase" data-phase="4">
+            <div class="phase-content"><span class="phase-tag">Layer 04 · Behaviour</span><h2 class="phase-title"><em>Qualifying</em><br>Purchase Engine</h2><p class="phase-desc">EcoCredits multiply when users make qualifying purchases: local, organic, plant-based, or package-free. Triple signal — quiz score + purchase + location — prevents gaming.</p></div>
+            <div class="phase-node"><div class="node-dot" data-tip="Triple signal: EcoQuiz tier + verified purchase category + geolocation. All three required to earn multiplied credits. Prevents gaming while rewarding real behaviour change." style="border-color:#c8a84b"></div><span class="phase-label">04</span></div>
+            <div class="phase-detail"><div class="detail-card"><div class="detail-label">Signal Stack</div><span class="tech-pill">Quiz Tier</span><span class="tech-pill">Purchase Verification</span><span class="tech-pill">Geolocation</span><span class="tech-pill">Partner Retailer API</span><div class="metric">×3</div><div class="metric-label">credit multiplier</div></div></div>
+          </div>
+          <div class="phase" data-phase="5">
+            <div class="phase-content"><span class="phase-tag">Layer 05 · Redistribution</span><h2 class="phase-title"><em>Democratic</em><br>Food Distribution</h2><p class="phase-desc">Surplus food tokenised as FoodPacks — contents, location, carbon score. Wallet holders redeem. Donate-mode users receive via community hubs, no app required.</p></div>
+            <div class="phase-node"><div class="node-dot" data-tip="FoodPacks: surplus food tokenised with location, contents (protein/produce/staple), and carbon score. Community hub access — zero-app entry for vulnerable households." style="border-color:#d4735a"></div><span class="phase-label">05</span></div>
+            <div class="phase-detail"><div class="detail-card"><div class="detail-label">Distribution Nodes</div><span class="tech-pill">Sustainable Retailers</span><span class="tech-pill">Local Producers</span><span class="tech-pill">Community Hubs</span><span class="tech-pill">School Programmes</span><div class="metric">0 app</div><div class="metric-label">required to receive food</div></div></div>
+          </div>
+          <div class="phase" data-phase="6">
+            <div class="phase-content"><span class="phase-tag">Layer 06 · Policy</span><h2 class="phase-title"><em>Impact</em><br>Intelligence Loop</h2><p class="phase-desc">Aggregated, anonymised behavioural data builds the evidence base for Government and Re-turn Ireland: unclaimed deposits as a public good fund.</p></div>
+            <div class="phase-node"><div class="node-dot" data-tip="Anonymised aggregate data → policy lever. Shows Government the collective impact of redirecting unclaimed deposits. ORBIT as democratic infrastructure." style="border-color:#a8c49a"></div><span class="phase-label">06</span></div>
+            <div class="phase-detail"><div class="detail-card"><div class="detail-label">Outputs</div><span class="tech-pill">Impact Dashboard</span><span class="tech-pill">Anonymised Reports</span><span class="tech-pill">Re-turn Partnership</span><span class="tech-pill">Govt Evidence Base</span><div class="metric">∞</div><div class="metric-label">the loop that closes the loop</div></div></div>
+          </div>
+        </div>
+
+        <div class="gl-impact">
+          <div class="impact-header"><div class="impact-title">Where the value flows</div><div class="impact-sub">€66.7M · redistributed democratically</div></div>
+          <div class="flow-grid">
+            <div class="flow-cell"><span class="flow-icon">🥬</span><div class="flow-title">EcoWallet Credits</div><p class="flow-desc">Redeemable for food at partner sustainable retailers and local producers. Every credit earned was a container returned.</p></div>
+            <div class="flow-cell"><span class="flow-icon">🏘️</span><div class="flow-title">Community Donation</div><p class="flow-desc">Users who donate redirect value to vulnerable households, food initiatives, and school programmes — no app required to receive.</p></div>
+            <div class="flow-cell"><span class="flow-icon">🌀</span><div class="flow-title">Collective Impact</div><p class="flow-desc">"Your returns + 2,847 others funded 400 meals this week." The system makes invisible generosity visible — recycling as solidarity.</p></div>
+          </div>
+        </div>
+
+        <div class="equity-section" id="equitySection">
+          <div class="equity-left">
+            <div class="equity-title">Designed for inclusion,<br>not just engagement</div>
+            <p>ORBIT's biggest design challenge isn't technology — it's ensuring the most vulnerable communities benefit without needing to navigate it. Every layer has an offline pathway, a community-hub fallback, and a zero-barrier entry point.</p>
+          </div>
+          <div class="equity-right">
+            <div class="equity-bar-item"><div class="equity-bar-label"><span>Accessible without smartphone</span><span>100%</span></div><div class="equity-bar-track"><div class="equity-bar-fill" style="--target-width:100%"></div></div></div>
+            <div class="equity-bar-item"><div class="equity-bar-label"><span>Community hub distribution nodes</span><span>Dublin Phase 1</span></div><div class="equity-bar-track"><div class="equity-bar-fill" style="--target-width:35%"></div></div></div>
+            <div class="equity-bar-item"><div class="equity-bar-label"><span>Unclaimed deposits redirected</span><span>Target: 40%</span></div><div class="equity-bar-track"><div class="equity-bar-fill" style="--target-width:40%"></div></div></div>
+            <div class="equity-bar-item"><div class="equity-bar-label"><span>Behaviour change proven (EcoQuiz)</span><span>measurable</span></div><div class="equity-bar-track"><div class="equity-bar-fill" style="--target-width:75%"></div></div></div>
+            <div class="equity-bar-item"><div class="equity-bar-label"><span>Policy evidence loop closed</span><span>Phase 6</span></div><div class="equity-bar-track"><div class="equity-bar-fill" style="--target-width:20%"></div></div></div>
+          </div>
+        </div>
+
+        <div class="gl-footer"><div class="gl-footer-orbit">ORBIT</div><div class="gl-footer-tag">A democratic redistribution engine · Ireland's circular economy · Trinity College Dublin</div></div>
+
+        <div class="gl-cta">
+          <p>Ready to explore the four experience flows?</p>
+          <button class="gl-cta-btn" onclick="showView('quiz', document.querySelectorAll('.nav-tab')[1])">Explore EcoQuiz →</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ VIEW 01: ECOQUIZ ══ -->
+    <div class="view" id="view-quiz">
+      <div class="lv-wrap">
+        <div class="lv-eyebrow">Experience Flow 01</div>
+        <h2 class="lv-title">EcoQuiz —<br><em>know your resonance</em></h2>
+        <p class="lv-desc">18 questions · 9 life dimensions · scores 0–54 · unlocks your personalised behaviour journey and EcoWallet tier.</p>
+        <div class="lv-divider"></div>
+        <div class="lv-grid-3" style="margin-bottom:24px">
+          <div class="lv-card"><span class="lv-card-icon">🌿</span><div class="lv-card-tag">Dimension 1</div><div class="lv-card-title">Mind &amp; Body</div><p class="lv-card-desc">Time in nature, active transport. Where behaviour change begins.</p></div>
+          <div class="lv-card"><span class="lv-card-icon">🥗</span><div class="lv-card-tag">Dimension 2</div><div class="lv-card-title">What I Eat</div><p class="lv-card-desc">Plant-based choices, food waste, local and seasonal eating.</p></div>
+          <div class="lv-card"><span class="lv-card-icon">✈️</span><div class="lv-card-tag">Dimension 3</div><div class="lv-card-title">How I Travel</div><p class="lv-card-desc">Daily mode, flight frequency, cycling streaks.</p></div>
+          <div class="lv-card"><span class="lv-card-icon">🏡</span><div class="lv-card-tag">Dimension 4</div><div class="lv-card-title">Where I Live</div><p class="lv-card-desc">Composting, recycling, energy efficiency at home.</p></div>
+          <div class="lv-card"><span class="lv-card-icon">👗</span><div class="lv-card-tag">Dimension 5</div><div class="lv-card-title">What I Wear</div><p class="lv-card-desc">Second-hand, repair, upcycling — fashion's hidden footprint.</p></div>
+          <div class="lv-card"><span class="lv-card-icon">🛍️</span><div class="lv-card-tag">Dimension 6</div><div class="lv-card-title">What I Buy</div><p class="lv-card-desc">Local, ethical, package-free. The EcoCredit qualifying signal.</p></div>
+          <div class="lv-card"><span class="lv-card-icon">❤️</span><div class="lv-card-tag">Dimension 7</div><div class="lv-card-title">Who I Care For</div><p class="lv-card-desc">Sharing practices, community groups, social influence.</p></div>
+          <div class="lv-card"><span class="lv-card-icon">🏢</span><div class="lv-card-tag">Dimension 8</div><div class="lv-card-title">Where I Work</div><p class="lv-card-desc">Workplace sustainability, reusable culture, green procurement.</p></div>
+          <div class="lv-card"><span class="lv-card-icon">🗳️</span><div class="lv-card-tag">Dimension 9</div><div class="lv-card-title">How I Vote</div><p class="lv-card-desc">Climate voting, civic action, democratic engagement.</p></div>
+        </div>
+        <div class="lv-divider"></div>
+        <div class="lv-grid-3" style="margin-bottom:32px">
+          <div class="lv-card"><div class="res-pill res-high">● High Resonance</div><div class="lv-card-title">You're already living it</div><p class="lv-card-desc">Deep alignment. ORBIT amplifies your choices.</p><div class="lv-card-val">40–54</div></div>
+          <div class="lv-card"><div class="res-pill res-mod">● Moderate Resonance</div><div class="lv-card-title">You're on the path</div><p class="lv-card-desc">Strong foundations. Real room to grow.</p><div class="lv-card-val">22–39</div></div>
+          <div class="lv-card"><div class="res-pill res-low">● Growing Resonance</div><div class="lv-card-title">Every journey starts here</div><p class="lv-card-desc">Awareness is the first act of change.</p><div class="lv-card-val">0–21</div></div>
+        </div>
+        <div style="display:flex;gap:12px;flex-wrap:wrap">
+          <button class="btn-primary">Launch full EcoQuiz →</button>
+          <button class="btn-outline" onclick="showView('wall', document.querySelectorAll('.nav-tab')[2])">Next: Green Wall →</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ VIEW 02: GREEN WALL ══ -->
+    <div class="view" id="view-wall">
+      <div class="lv-wrap">
+        <div class="lv-eyebrow">Experience Flow 02</div>
+        <h2 class="lv-title">The <em>Green Wall</em><br>&amp; Token Economy</h2>
+        <p class="lv-desc">Positive marketing that aligns incentives with impact. The Green Algorithm rewards real sustainability — not advertising spend. Four honest revenue streams, none of them extractive.</p>
+        <div class="lv-divider"></div>
+        <div class="lv-grid-2" style="margin-bottom:24px;align-items:start">
+          <div>
+            <div class="lv-card-tag" style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.2em;text-transform:uppercase;color:var(--gold);margin-bottom:14px;display:block">The Green Algorithm</div>
+            <div id="algoBarsView" style="margin-bottom:20px">
+              <div class="algo-bar-item"><div class="algo-bar-label"><span>Product sustainability (verified)</span><span>40%</span></div><div class="algo-bar-track"><div class="algo-bar-fill" data-w="40%"></div></div></div>
+              <div class="algo-bar-item"><div class="algo-bar-label"><span>Local / Irish supply chain</span><span>25%</span></div><div class="algo-bar-track"><div class="algo-bar-fill" data-w="25%"></div></div></div>
+              <div class="algo-bar-item"><div class="algo-bar-label"><span>Packaging &amp; waste reduction</span><span>20%</span></div><div class="algo-bar-track"><div class="algo-bar-fill" data-w="20%"></div></div></div>
+              <div class="algo-bar-item"><div class="algo-bar-label"><span>Community impact</span><span>15%</span></div><div class="algo-bar-track"><div class="algo-bar-fill" data-w="15%"></div></div></div>
+            </div>
+          </div>
+          <div>
+            <div class="lv-card-tag" style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.2em;text-transform:uppercase;color:var(--gold);margin-bottom:14px;display:block">Revenue Streams</div>
+            <div class="rev-row"><span class="rev-icon">🏷️</span><span class="rev-label">Brand partnership fees</span><span class="rev-amount">€500–2k/mo</span></div>
+            <div class="rev-row"><span class="rev-icon">🥬</span><span class="rev-label">FoodPack margin</span><span class="rev-amount">5–8%</span></div>
+            <div class="rev-row"><span class="rev-icon">📊</span><span class="rev-label">Impact data reports</span><span class="rev-amount">€5–20k</span></div>
+            <div class="rev-row"><span class="rev-icon">🌍</span><span class="rev-label">Grants (EPA, EI, EU)</span><span class="rev-amount">€50–500k</span></div>
+          </div>
+        </div>
+        <div class="lv-divider"></div>
+        <div class="lv-card-tag" style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.2em;text-transform:uppercase;color:var(--gold);margin-bottom:14px;display:block">Act Now Collective · All 9 Resource Dimensions</div>
+        <div class="actnow-grid">
+          <a class="an-card" href="https://actnowcollective.org/what-i-eat/" target="_blank"><span class="an-icon">🥗</span><div class="an-cat">Act Now</div><div class="an-title">What I Eat</div></a>
+          <a class="an-card" href="https://actnowcollective.org/how-i-travel/" target="_blank"><span class="an-icon">✈️</span><div class="an-cat">Act Now</div><div class="an-title">How I Travel</div></a>
+          <a class="an-card" href="https://actnowcollective.org/what-i-wear/" target="_blank"><span class="an-icon">👗</span><div class="an-cat">Act Now</div><div class="an-title">What I Wear</div></a>
+          <a class="an-card" href="https://actnowcollective.org/where-i-live/" target="_blank"><span class="an-icon">🏡</span><div class="an-cat">Act Now</div><div class="an-title">Where I Live</div></a>
+          <a class="an-card" href="https://actnowcollective.org/where-i-work-learn/" target="_blank"><span class="an-icon">🏢</span><div class="an-cat">Act Now</div><div class="an-title">Where I Work</div></a>
+          <a class="an-card" href="https://actnowcollective.org/what-i-buy/" target="_blank"><span class="an-icon">🛍️</span><div class="an-cat">Act Now</div><div class="an-title">What I Buy</div></a>
+          <a class="an-card" href="https://actnowcollective.org/who-i-care-for/" target="_blank"><span class="an-icon">❤️</span><div class="an-cat">Act Now</div><div class="an-title">Who I Care For</div></a>
+          <a class="an-card" href="https://actnowcollective.org/how-i-vote/" target="_blank"><span class="an-icon">🗳️</span><div class="an-cat">Act Now</div><div class="an-title">How I Vote</div></a>
+          <a class="an-card" href="https://actnowcollective.org/mind-and-body/" target="_blank"><span class="an-icon">🌿</span><div class="an-cat">Act Now</div><div class="an-title">Mind &amp; Body</div></a>
+        </div>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:32px">
+          <button class="btn-primary" onclick="window.open('orbit-green-wall.html','_blank')">Open full Green Wall →</button>
+          <button class="btn-outline" onclick="showView('wallet', document.querySelectorAll('.nav-tab')[3])">Next: EcoWallet →</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ VIEW 03: ECOWALLET ══ -->
+    <div class="view" id="view-wallet">
+      <div class="lv-wrap">
+        <div class="lv-eyebrow">Experience Flow 03</div>
+        <div style="display:grid;grid-template-columns:1fr auto;gap:40px;align-items:start;flex-wrap:wrap">
+          <div>
+            <h2 class="lv-title">EcoWallet —<br><em>impact made visible</em></h2>
+            <p class="lv-desc">Where the token economy becomes real. Credits earned, FoodPacks claimed, community impact tracked live. The loop that closes the loop.</p>
+          </div>
+          <div class="wallet-card" style="width:260px;flex-shrink:0">
+            <div class="wc-label">ORBIT · EcoWallet</div>
+            <div class="wc-balance" id="wcBal">0</div>
+            <div class="wc-unit">EcoCredits available</div>
+            <div class="wc-tier">🌿 High Resonance · Tier 3</div>
+          </div>
+        </div>
+        <div class="lv-divider"></div>
+        <div class="counter-grid" style="margin-bottom:24px">
+          <div class="counter-cell" style="--cc-color:#aac47a"><span class="cc-icon">🍾</span><div class="cc-val" data-target="2847">0</div><div class="cc-label">containers returned this week</div></div>
+          <div class="counter-cell" style="--cc-color:#e8b83a"><span class="cc-icon">🥬</span><div class="cc-val" data-target="412">0</div><div class="cc-label">meals funded via donations</div></div>
+          <div class="counter-cell" style="--cc-color:#5a9eaa"><span class="cc-icon">💶</span><div class="cc-val" data-target="1840" data-prefix="€">0</div><div class="cc-label">value circulated in Dublin</div></div>
+          <div class="counter-cell" style="--cc-color:#c4634a"><span class="cc-icon">❤️</span><div class="cc-val" data-target="4218">0</div><div class="cc-label">total meals since launch</div></div>
+        </div>
+        <div class="lv-card-tag" style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.2em;text-transform:uppercase;color:var(--gold);margin-bottom:14px;display:block">Community pulse · live</div>
+        <div style="background:white;border:1px solid var(--line);padding:20px;margin-bottom:24px">
+          <div class="feed-row"><span class="feed-em">🍾</span><span class="feed-txt"><strong>Aoife M.</strong> returned 6 containers · Tesco Rathmines</span><span class="feed-time">2m ago</span></div>
+          <div class="feed-row"><span class="feed-em">🥬</span><span class="feed-txt"><strong>Ciarán D.</strong> redeemed Seasonal Produce Pack · Happy Pear</span><span class="feed-time">8m ago</span></div>
+          <div class="feed-row"><span class="feed-em">❤️</span><span class="feed-txt"><strong>Saoirse K.</strong> donated 120 credits → Capuchin Day Centre</span><span class="feed-time">15m ago</span></div>
+          <div class="feed-row"><span class="feed-em">⚡</span><span class="feed-txt"><strong>Donal F.</strong> earned ×3 multiplier · Green Earth Organics</span><span class="feed-time">22m ago</span></div>
+          <div class="feed-row"><span class="feed-em">🚲</span><span class="feed-txt"><strong>Mairéad B.</strong> completed Active Week badge · +50⊙</span><span class="feed-time">34m ago</span></div>
+        </div>
+        <div style="display:flex;gap:12px;flex-wrap:wrap">
+          <button class="btn-primary">Open full EcoWallet →</button>
+          <button class="btn-outline" onclick="showView('loop', document.querySelectorAll('.nav-tab')[4])">Next: The Full Loop →</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ VIEW 04: THE LOOP ══ -->
+    <div class="view" id="view-loop" style="background:var(--void);color:var(--gl-cream);font-family:'DM Mono',monospace;">
+      <div style="position:relative;z-index:1;max-width:900px;margin:0 auto;padding:60px 40px;">
+
+        <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.3em;text-transform:uppercase;color:var(--gl-gold);margin-bottom:16px">Experience Flow 04</div>
+        <h2 style="font-family:'Fraunces',serif;font-size:clamp(40px,6vw,72px);font-weight:200;line-height:0.95;letter-spacing:-0.02em;color:var(--gl-cream);margin-bottom:60px">The full loop<br><em style="font-style:italic;color:var(--gl-fern)">explained simply</em></h2>
+
+        <!-- Steps — dark style from green wall -->
+        <div style="display:flex;flex-direction:column;gap:2px;">
+
+          <div style="display:grid;grid-template-columns:80px 1fr;border:1px solid var(--gl-line);background:var(--gl-glow);transition:all 0.3s ease;">
+            <div style="display:flex;align-items:center;justify-content:center;background:rgba(46,68,24,0.4);border-right:1px solid var(--gl-line);font-family:'Fraunces',serif;font-size:24px;font-weight:200;color:var(--gl-leaf);padding:32px 12px;">1</div>
+            <div style="padding:28px 32px;"><div style="font-size:8px;letter-spacing:0.25em;text-transform:uppercase;color:var(--gl-gold);margin-bottom:6px;">Physical Layer</div><div style="font-family:'Fraunces',serif;font-size:20px;font-weight:200;font-style:italic;color:var(--gl-cream);margin-bottom:8px;">You return a container at a Re-turn kiosk</div><p style="font-size:11px;line-height:1.8;color:rgba(200,228,160,0.5);">Any plastic bottle, can, or carton covered by Ireland's Deposit Return Scheme. The kiosk scans it, validates it, and sends the deposit signal to ORBIT's API. This is where money enters the system.</p><div style="display:inline-flex;align-items:center;gap:5px;margin-top:12px;font-size:9px;color:var(--gl-gold);padding:4px 10px;border:1px solid rgba(200,168,75,0.25);background:rgba(200,168,75,0.06);">⊙ 1 EcoCredit minted per container</div></div>
+          </div>
+
+          <div style="display:grid;grid-template-columns:80px 1fr;border:1px solid var(--gl-line);background:var(--gl-glow);">
+            <div style="display:flex;align-items:center;justify-content:center;background:rgba(46,68,24,0.4);border-right:1px solid var(--gl-line);font-family:'Fraunces',serif;font-size:24px;font-weight:200;color:var(--gl-leaf);padding:32px 12px;">2</div>
+            <div style="padding:28px 32px;"><div style="font-size:8px;letter-spacing:0.25em;text-transform:uppercase;color:var(--gl-gold);margin-bottom:6px;">Onboarding Choice</div><div style="font-family:'Fraunces',serif;font-size:20px;font-weight:200;font-style:italic;color:var(--gl-cream);margin-bottom:8px;">You choose your participation mode</div><p style="font-size:11px;line-height:1.8;color:rgba(200,228,160,0.5);">At first sign-up: do you want to receive value as food credits for yourself, or donate your credits to vulnerable households and community food programmes? You can change this anytime. Both choices are honoured equally — no moral hierarchy.</p></div>
+          </div>
+
+          <div style="display:grid;grid-template-columns:80px 1fr;border:1px solid var(--gl-line);background:var(--gl-glow);">
+            <div style="display:flex;align-items:center;justify-content:center;background:rgba(46,68,24,0.4);border-right:1px solid var(--gl-line);font-family:'Fraunces',serif;font-size:24px;font-weight:200;color:var(--gl-leaf);padding:32px 12px;">3</div>
+            <div style="padding:28px 32px;"><div style="font-size:8px;letter-spacing:0.25em;text-transform:uppercase;color:var(--gl-gold);margin-bottom:6px;">EcoQuiz</div><div style="font-family:'Fraunces',serif;font-size:20px;font-weight:200;font-style:italic;color:var(--gl-cream);margin-bottom:8px;">You take the EcoQuiz — 9 dimensions, 18 questions</div><p style="font-size:11px;line-height:1.8;color:rgba(200,228,160,0.5);">Your footprint across Mind &amp; Body, Work, Fashion, Home, Travel, Community, Buying, Eating, and Civic engagement. Score out of 54. Your Resonance Level determines your starting tier and which behaviour journey unlocks first.</p><div style="display:inline-flex;align-items:center;gap:5px;margin-top:12px;font-size:9px;color:var(--gl-gold);padding:4px 10px;border:1px solid rgba(200,168,75,0.25);background:rgba(200,168,75,0.06);">⊙ Quiz score = your EcoWallet tier</div></div>
+          </div>
+
+          <div style="display:grid;grid-template-columns:80px 1fr;border:1px solid var(--gl-line);background:var(--gl-glow);">
+            <div style="display:flex;align-items:center;justify-content:center;background:rgba(46,68,24,0.4);border-right:1px solid var(--gl-line);font-family:'Fraunces',serif;font-size:24px;font-weight:200;color:var(--gl-leaf);padding:32px 12px;">4</div>
+            <div style="padding:28px 32px;"><div style="font-size:8px;letter-spacing:0.25em;text-transform:uppercase;color:var(--gl-gold);margin-bottom:6px;">Behaviour Engine</div><div style="font-family:'Fraunces',serif;font-size:20px;font-weight:200;font-style:italic;color:var(--gl-cream);margin-bottom:8px;">You make qualifying purchases — and credits multiply</div><p style="font-size:11px;line-height:1.8;color:rgba(200,228,160,0.5);">Shopping local, organic, plant-based, or package-free at a verified Green Algorithm partner triggers a ×2 or ×3 credit multiplier. The triple signal (quiz tier + purchase + location) validates it. Gaming is structurally prevented.</p><div style="display:inline-flex;align-items:center;gap:5px;margin-top:12px;font-size:9px;color:var(--gl-gold);padding:4px 10px;border:1px solid rgba(200,168,75,0.25);background:rgba(200,168,75,0.06);">⊙ Up to ×3 EcoCredit multiplier</div></div>
+          </div>
+
+          <div style="display:grid;grid-template-columns:80px 1fr;border:1px solid var(--gl-line);background:var(--gl-glow);">
+            <div style="display:flex;align-items:center;justify-content:center;background:rgba(46,68,24,0.4);border-right:1px solid var(--gl-line);font-family:'Fraunces',serif;font-size:24px;font-weight:200;color:var(--gl-leaf);padding:32px 12px;">5</div>
+            <div style="padding:28px 32px;"><div style="font-size:8px;letter-spacing:0.25em;text-transform:uppercase;color:var(--gl-gold);margin-bottom:6px;">Redistribution</div><div style="font-family:'Fraunces',serif;font-size:20px;font-weight:200;font-style:italic;color:var(--gl-cream);margin-bottom:8px;">Credits become food — or become someone else's food</div><p style="font-size:11px;line-height:1.8;color:rgba(200,228,160,0.5);">FoodPacks from partner retailers (surplus food tokenised with contents, location, and carbon score) are redeemed with EcoCredits. If you've chosen donate mode, your value flows directly to vulnerable households via community hubs — no app required on the receiving end.</p><div style="display:inline-flex;align-items:center;gap:5px;margin-top:12px;font-size:9px;color:var(--gl-gold);padding:4px 10px;border:1px solid rgba(200,168,75,0.25);background:rgba(200,168,75,0.06);">⊙ The loop closes here</div></div>
+          </div>
+
+          <div style="display:grid;grid-template-columns:80px 1fr;border:1px solid var(--gl-line);background:var(--gl-glow);">
+            <div style="display:flex;align-items:center;justify-content:center;background:rgba(46,68,24,0.4);border-right:1px solid var(--gl-line);font-family:'Fraunces',serif;font-size:24px;font-weight:200;color:var(--gl-leaf);padding:32px 12px;">6</div>
+            <div style="padding:28px 32px;"><div style="font-size:8px;letter-spacing:0.25em;text-transform:uppercase;color:var(--gl-gold);margin-bottom:6px;">Policy Layer</div><div style="font-family:'Fraunces',serif;font-size:20px;font-weight:200;font-style:italic;color:var(--gl-cream);margin-bottom:8px;">Your behaviour becomes a democratic argument</div><p style="font-size:11px;line-height:1.8;color:rgba(200,228,160,0.5);">Aggregated, anonymised data from thousands of users builds the evidence base: unclaimed deposits should be a public good fund. ORBIT presents this to Re-turn Ireland, the EPA, and the Government — turning a community platform into a policy lever.</p><div style="display:inline-flex;align-items:center;gap:5px;margin-top:12px;font-size:9px;color:var(--gl-gold);padding:4px 10px;border:1px solid rgba(200,168,75,0.25);background:rgba(200,168,75,0.06);">⊙ Individual action → systemic change</div></div>
+          </div>
+
+        </div>
+
+        <!-- Manifesto — dark style -->
+        <div style="margin-top:60px;padding:48px 44px;background:rgba(46,68,24,0.2);border:1px solid var(--gl-line);text-align:center;position:relative;">
+          <div style="font-family:'Fraunces',serif;font-size:80px;font-style:italic;color:rgba(106,152,72,0.08);line-height:1;position:absolute;top:-10px;left:20px;">"</div>
+          <div style="font-family:'Fraunces',serif;font-size:clamp(16px,2.2vw,22px);font-weight:200;font-style:italic;color:var(--gl-fern);line-height:1.6;max-width:700px;margin:0 auto;position:relative;z-index:1;">"The act of recycling a container is not merely a transaction — it is the first step in a behaviour chain that reconnects people to nature, rewards choices that heal the planet, and ensures the wealth of Ireland's circular economy flows back to the communities that generate it."</div>
+          <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.2em;text-transform:uppercase;color:rgba(106,152,72,0.45);margin-top:16px;">ORBIT · Manifesto · Nayara Cristine Pinheiro Reis · TCD Climate Entrepreneurship · 2026</div>
+        </div>
+
+        <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:40px">
+          <button class="btn-primary" onclick="showView('greenline', document.querySelectorAll('.nav-tab')[0])">← Back to Green Line</button>
+          <button class="btn-outline" style="color:var(--gl-fern);border-color:var(--gl-line);" onclick="showView('quiz', document.querySelectorAll('.nav-tab')[1])">Start the EcoQuiz →</button>
+        </div>
+
+      </div>
+    </div>
+
+  </div><!-- end app-content -->
+
+  <div class="app-ticker" id="appTicker">
+    <div class="ticker-text">&nbsp;&nbsp;&nbsp;&nbsp;"The act of recycling a container is not merely a transaction — it is the first step in a behaviour chain that reconnects people to nature, rewards choices that heal the planet, and ensures the wealth of Ireland's circular economy flows back to the communities that generate it." — ORBIT Manifesto · Nayara Cristine Pinheiro Reis · TCD Climate Entrepreneurship · 2026 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</div>
+  </div>
+</div>
+
+<script>
+const nav   = document.getElementById('appNav');
+const badge = document.getElementById('navBadge');
+const ticker= document.getElementById('appTicker');
+
+function enterApp() {
+  document.getElementById('splash').classList.add('exit');
+  document.getElementById('app').classList.add('visible');
+  setTimeout(() => {
+    document.getElementById('splash').style.display = 'none';
+    initGreenLine();
+  }, 900);
+}
+
+function showView(id, btn) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('view-'+id).classList.add('active');
+  if (btn) btn.classList.add('active');
+
+  // Nav/ticker theme
+  const isDark = id === 'greenline';
+  nav.className    = 'app-nav '    + (isDark ? 'dark' : 'light');
+  ticker.className = 'app-ticker ' + (isDark ? 'dark' : 'light');
+
+  if (!isDark) setTimeout(() => initLightView(id), 120);
+  window.scrollTo(0,0);
+}
+
+/* ── Green Line init ── */
+function initGreenLine() {
+  const phases = document.querySelectorAll('.phase');
+  const obs = new IntersectionObserver(entries => {
+    entries.forEach((e,i) => { if (e.isIntersecting) setTimeout(() => e.target.classList.add('visible'), i*100); });
+  }, { threshold:0.12, root: document.getElementById('view-greenline') });
+  phases.forEach(p => obs.observe(p));
+
+  const eqObs = new IntersectionObserver(entries => {
+    if (entries[0].isIntersecting) document.querySelectorAll('.equity-bar-fill').forEach((b,i) => setTimeout(() => b.classList.add('animate'), i*200));
+  }, { threshold:0.3, root: document.getElementById('view-greenline') });
+  eqObs.observe(document.getElementById('equitySection'));
+
+  const tooltip = document.getElementById('glTooltip');
+  document.querySelectorAll('[data-tip]').forEach(el => {
+    el.addEventListener('mouseenter', e => { tooltip.textContent = e.target.dataset.tip; tooltip.style.opacity='1'; });
+    el.addEventListener('mousemove',  e => { tooltip.style.left=(e.clientX+16)+'px'; tooltip.style.top=(e.clientY-8)+'px'; });
+    el.addEventListener('mouseleave', () => tooltip.style.opacity='0');
+  });
+}
+
+/* ── Light views init ── */
+function animateCounter(el, target, delay=0, prefix='') {
+  setTimeout(() => {
+    let start = null;
+    const step = ts => {
+      if (!start) start = ts;
+      const p = Math.min((ts-start)/1600, 1);
+      el.textContent = prefix + Math.round((1-Math.pow(1-p,3))*target).toLocaleString();
+      if (p < 1) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  }, delay);
+}
+
+function initLightView(id) {
+  if (id === 'wall') {
+    setTimeout(() => document.querySelectorAll('#algoBarsView .algo-bar-fill').forEach(b => b.style.width = b.dataset.w), 300);
+  }
+  if (id === 'wallet') {
+    animateCounter(document.getElementById('wcBal'), 847, 200);
+    document.querySelectorAll('#view-wallet .cc-val').forEach((el,i) => {
+      animateCounter(el, parseInt(el.dataset.target), 300+i*180, el.dataset.prefix||'');
+    });
+  }
+}
+</script>
+</body>
+</html>
