@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ORBIT · We all receive.</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,100;0,9..144,200;1,9..144,100;1,9..144,200;1,9..144,400&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+html, body { height:100%; background:#0a0d06; }
+
+body {
+  display:flex; flex-direction:column;
+  align-items:center; justify-content:center;
+  min-height:100vh; padding:40px 24px;
+  font-family:'Fraunces', serif;
+}
+
+/* Ambient glow */
+body::before {
+  content:''; position:fixed; inset:0; pointer-events:none;
+  background:
+    radial-gradient(ellipse 60% 50% at 50% 40%, rgba(74,103,40,0.12) 0%, transparent 65%);
+}
+
+/* ── BILLBOARD FRAME ── */
+.billboard-wrap {
+  position:relative; z-index:1;
+  display:flex; flex-direction:column; align-items:center;
+  gap:60px; width:100%; max-width:1000px;
+}
+
+/* The billboard itself */
+.billboard {
+  width:100%;
+  aspect-ratio:24/10;
+  background:#0f1408;
+  border:1px solid rgba(168,196,154,0.12);
+  display:flex; align-items:center; justify-content:center;
+  position:relative; overflow:hidden;
+  box-shadow:
+    0 40px 80px rgba(0,0,0,0.6),
+    0 0 0 6px rgba(168,196,154,0.04),
+    inset 0 0 120px rgba(0,0,0,0.4);
+}
+
+/* Subtle vignette */
+.billboard::before {
+  content:''; position:absolute; inset:0;
+  background:radial-gradient(ellipse 70% 80% at 50% 50%, transparent 40%, rgba(0,0,0,0.5) 100%);
+  pointer-events:none; z-index:0;
+}
+
+/* Very faint grain */
+.billboard::after {
+  content:''; position:absolute; inset:0;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+  opacity:0.6; pointer-events:none; z-index:0;
+}
+
+.billboard-content {
+  position:relative; z-index:1;
+  text-align:center;
+  display:flex; flex-direction:column;
+  align-items:center; gap:0;
+}
+
+.bb-orbit {
+  font-size:clamp(14px,2.2vw,28px);
+  font-weight:200; letter-spacing:0.55em;
+  text-transform:uppercase;
+  color:rgba(168,196,154,0.45);
+  margin-bottom:clamp(8px,1.5vw,20px);
+  font-family:'DM Mono', monospace;
+  opacity:0; animation:fadeUp 1.2s ease 0.3s forwards;
+}
+
+.bb-tagline {
+  font-size:clamp(32px,7vw,100px);
+  font-weight:100; line-height:1;
+  letter-spacing:-0.02em;
+  color:#f0ede4;
+  opacity:0; animation:fadeUp 1.2s ease 0.7s forwards;
+}
+
+.bb-tagline em {
+  font-style:italic;
+  color:#a8c49a;
+}
+
+.bb-period {
+  color:rgba(200,168,75,0.7);
+}
+
+/* Thin line separator */
+.bb-line {
+  width:clamp(30px,4vw,60px); height:1px;
+  background:rgba(168,196,154,0.25);
+  margin:clamp(10px,2vw,28px) 0;
+  opacity:0; animation:fadeUp 1.2s ease 1s forwards;
+}
+
+.bb-url {
+  font-family:'DM Mono', monospace;
+  font-size:clamp(6px,0.9vw,12px);
+  letter-spacing:0.3em;
+  color:rgba(168,196,154,0.3);
+  text-transform:lowercase;
+  opacity:0; animation:fadeUp 1.2s ease 1.2s forwards;
+}
+
+/* Billboard legs */
+.billboard-legs {
+  position:absolute; bottom:-32px; left:50%;
+  transform:translateX(-50%);
+  display:flex; gap:clamp(40px,8vw,120px);
+}
+.leg {
+  width:6px; height:32px;
+  background:rgba(168,196,154,0.15);
+}
+
+/* ── VARIANTS ROW ── */
+.variants {
+  display:grid; grid-template-columns:repeat(3,1fr);
+  gap:2px; width:100%;
+  opacity:0; animation:fadeUp 1s ease 1.5s forwards;
+}
+@media(max-width:600px){ .variants { grid-template-columns:1fr; } }
+
+.variant {
+  padding:28px 24px;
+  display:flex; flex-direction:column;
+  justify-content:space-between;
+  min-height:140px;
+  position:relative; overflow:hidden;
+}
+
+.v1 { background:#0f1408; border:1px solid rgba(168,196,154,0.1); }
+.v2 { background:#f0ede4; }
+.v3 { background:#4a6728; }
+
+.v-label {
+  font-family:'DM Mono', monospace;
+  font-size:8px; letter-spacing:0.25em;
+  text-transform:uppercase; margin-bottom:16px;
+}
+.v1 .v-label { color:rgba(168,196,154,0.35); }
+.v2 .v-label { color:rgba(74,103,40,0.4); }
+.v3 .v-label { color:rgba(255,255,255,0.4); }
+
+.v-orbit {
+  font-family:'DM Mono', monospace;
+  font-size:9px; letter-spacing:0.4em;
+  text-transform:uppercase; margin-bottom:6px;
+}
+.v1 .v-orbit { color:rgba(168,196,154,0.4); }
+.v2 .v-orbit { color:rgba(74,103,40,0.4); }
+.v3 .v-orbit { color:rgba(255,255,255,0.5); }
+
+.v-tagline {
+  font-size:clamp(18px,2.5vw,28px);
+  font-weight:200; line-height:1.1;
+  letter-spacing:-0.01em;
+}
+.v1 .v-tagline { color:#f0ede4; }
+.v2 .v-tagline { color:#0f1409; }
+.v3 .v-tagline { color:white; }
+
+.v-tagline em { font-style:italic; }
+.v1 .v-tagline em { color:#a8c49a; }
+.v2 .v-tagline em { color:#4a6728; }
+.v3 .v-tagline em { color:#d4e8cc; }
+
+.v-period-gold { color:rgba(200,168,75,0.8); }
+.v-period-leaf { color:rgba(74,103,40,0.5); }
+.v-period-mist { color:rgba(212,232,204,0.7); }
+
+.v-note {
+  font-family:'DM Mono', monospace;
+  font-size:8px; letter-spacing:0.1em;
+  margin-top:14px; line-height:1.6;
+}
+.v1 .v-note { color:rgba(168,196,154,0.25); }
+.v2 .v-note { color:rgba(74,103,40,0.3); }
+.v3 .v-note { color:rgba(255,255,255,0.3); }
+
+/* ── FOOTER ── */
+.bb-footer {
+  text-align:center; margin-top:20px;
+  opacity:0; animation:fadeUp 1s ease 1.8s forwards;
+}
+.bb-footer-text {
+  font-family:'DM Mono', monospace;
+  font-size:9px; letter-spacing:0.2em;
+  color:rgba(168,196,154,0.2); text-transform:uppercase;
+}
+
+/* ── ANIMATIONS ── */
+@keyframes fadeUp {
+  from { opacity:0; transform:translateY(14px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+</style>
+</head>
+<body>
+
+<div class="billboard-wrap">
+
+  <!-- MAIN BILLBOARD -->
+  <div class="billboard">
+    <div class="billboard-content">
+      <div class="bb-orbit">ORBIT</div>
+      <div class="bb-tagline">
+        We all <em>receive</em><span class="bb-period">.</span>
+      </div>
+      <div class="bb-line"></div>
+      <div class="bb-url">nayaracreis.github.io/orbit</div>
+    </div>
+    <div class="billboard-legs">
+      <div class="leg"></div>
+      <div class="leg"></div>
+    </div>
+  </div>
+
+  <!-- THREE COLOUR VARIANTS -->
+  <div class="variants">
+
+    <div class="variant v1">
+      <div class="v-label">Night / Dark</div>
+      <div>
+        <div class="v-orbit">ORBIT</div>
+        <div class="v-tagline">We all <em>receive</em><span class="v-period-gold">.</span></div>
+      </div>
+      <div class="v-note">Forest dark · for night billboards,<br>digital screens, social</div>
+    </div>
+
+    <div class="variant v2">
+      <div class="v-label">Day / Light</div>
+      <div>
+        <div class="v-orbit">ORBIT</div>
+        <div class="v-tagline">We all <em>receive</em><span class="v-period-leaf">.</span></div>
+      </div>
+      <div class="v-note">Warm paper · for print,<br>posters, press</div>
+    </div>
+
+    <div class="variant v3">
+      <div class="v-label">Brand / Green</div>
+      <div>
+        <div class="v-orbit">ORBIT</div>
+        <div class="v-tagline">We all <em>receive</em><span class="v-period-mist">.</span></div>
+      </div>
+      <div class="v-note">ORBIT green · for partnerships,<br>community events, kiosks</div>
+    </div>
+
+  </div>
+
+  <div class="bb-footer">
+    <div class="bb-footer-text">ORBIT · A democratic redistribution engine · Ireland's circular economy · Nayara Cristine Pinheiro Reis · TCD 2026</div>
+  </div>
+
+</div>
+
+</body>
+</html>
