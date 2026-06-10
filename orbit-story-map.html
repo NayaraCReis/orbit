@@ -1,0 +1,940 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ORBIT · Story Map · The Journey</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,200;0,9..144,400;1,9..144,200;1,9..144,400;1,9..144,700&family=DM+Mono:wght@300;400&family=Caveat:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --paper: #f5edd8;
+  --aged:  #ede0c4;
+  --warm:  #e0ccaa;
+  --clay:  #c4a882;
+  --terra: #8a6440;
+  --bark:  #3a2010;
+  --ink:   #1e1208;
+  --moss:  #2e3d18;
+  --leaf:  #4a6728;
+  --sage:  #7a9e52;
+  --fern:  #aac47a;
+  --mist:  #d6e8b8;
+  --gold:  #c49a2a;
+  --amber: #e8b040;
+  --sky:   #7ab8c8;
+  --coral: #c45a3a;
+  --blush: #e8a080;
+  --plum:  #7a4a6a;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+html, body { height:100%; overflow:hidden; }
+
+body {
+  background: var(--paper);
+  font-family: 'DM Mono', monospace;
+  color: var(--ink);
+  cursor: grab;
+  user-select: none;
+}
+body.grabbing { cursor: grabbing; }
+
+/* Paper texture */
+body::before {
+  content:''; position:fixed; inset:0; pointer-events:none; z-index:0;
+  background:
+    radial-gradient(ellipse 80% 60% at 10% 20%, rgba(196,168,130,0.2) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 80% at 90% 80%, rgba(58,32,16,0.06) 0%, transparent 50%);
+}
+
+/* ── HEADER ── */
+.story-header {
+  position:fixed; top:0; left:0; right:0; z-index:50;
+  height:52px;
+  background:rgba(245,237,216,0.94);
+  backdrop-filter:blur(12px);
+  border-bottom:1px solid rgba(196,168,130,0.4);
+  display:flex; align-items:center; justify-content:space-between;
+  padding:0 32px;
+}
+.sh-left { display:flex; align-items:center; gap:20px; }
+.sh-logo {
+  font-family:'Fraunces',serif; font-size:20px;
+  font-weight:200; font-style:italic; color:var(--leaf);
+}
+.sh-title {
+  font-size:9px; letter-spacing:0.25em; text-transform:uppercase;
+  color:var(--clay);
+}
+.sh-right {
+  display:flex; align-items:center; gap:16px;
+  font-size:9px; letter-spacing:0.15em; color:var(--clay);
+}
+.sh-hint {
+  display:flex; align-items:center; gap:6px;
+  animation:hintPulse 3s ease-in-out infinite;
+}
+.hint-arrow { font-size:16px; color:var(--sage); }
+@keyframes hintPulse { 0%,100%{opacity:0.5} 50%{opacity:1} }
+
+.sh-progress {
+  display:flex; gap:4px; align-items:center;
+}
+.sp-dot {
+  width:6px; height:6px; border-radius:50%;
+  background:var(--warm); transition:all 0.4s ease;
+}
+.sp-dot.reached { background:var(--leaf); }
+.sp-dot.current { background:var(--amber); transform:scale(1.4); }
+
+/* ── SCROLL TRACK ── */
+.scroll-track {
+  position:fixed; bottom:12px; left:50%; transform:translateX(-50%);
+  z-index:50; display:flex; align-items:center; gap:0;
+}
+.st-track {
+  width:200px; height:3px;
+  background:rgba(196,168,130,0.3); border-radius:2px; overflow:hidden;
+}
+.st-fill {
+  height:100%; background:linear-gradient(to right, var(--leaf), var(--amber));
+  border-radius:2px; width:0%; transition:width 0.3s ease;
+}
+
+/* ── CANVAS ── */
+.canvas {
+  position:fixed; inset:52px 0 32px 0;
+  overflow:hidden;
+}
+
+.journey {
+  display:flex; align-items:stretch;
+  height:100%; width:max-content;
+  padding:0;
+  will-change:transform;
+  transition:transform 0.1s linear;
+}
+
+/* ── SCENE PANELS ── */
+.scene {
+  width:420px; height:100%;
+  flex-shrink:0;
+  display:flex; flex-direction:column;
+  justify-content:center;
+  padding:32px 36px;
+  position:relative;
+  border-right:1px solid rgba(196,168,130,0.25);
+  transition:background 0.5s ease;
+}
+
+/* Scene background variations */
+.scene-0 { background:transparent; }
+.scene-1 { background:rgba(58,32,16,0.03); }
+.scene-2 { background:rgba(74,103,40,0.04); }
+.scene-3 { background:rgba(122,158,82,0.05); }
+.scene-4 { background:rgba(196,154,42,0.04); }
+.scene-5 { background:rgba(58,32,16,0.03); }
+.scene-6 { background:rgba(46,61,24,0.06); }
+.scene-7 { background:rgba(74,103,40,0.08); }
+.scene-8 { background:transparent; }
+
+/* Wide scenes */
+.scene.wide { width:560px; }
+.scene.hero  { width:480px; background:transparent; }
+
+/* Scene number */
+.scene-num {
+  font-family:'Fraunces',serif;
+  font-size:100px; font-weight:200;
+  color:rgba(196,168,130,0.18); line-height:1;
+  position:absolute; top:20px; right:20px;
+  pointer-events:none;
+}
+
+/* Illustration area */
+.scene-illustration {
+  width:100%; margin-bottom:28px;
+  display:flex; align-items:center; justify-content:center;
+  flex-shrink:0;
+}
+
+/* SVG illustrations */
+.illustration-svg {
+  width:100%; max-width:320px; height:auto;
+}
+
+/* Hand-drawn annotation style */
+.scene-annotation {
+  font-family:'Caveat',cursive;
+  font-size:14px; color:var(--clay);
+  position:absolute;
+  transform:rotate(-2deg);
+}
+
+/* Scene content */
+.scene-content { position:relative; z-index:1; }
+
+.scene-moment {
+  font-size:8px; letter-spacing:0.3em; text-transform:uppercase;
+  color:var(--gold); margin-bottom:10px;
+  display:flex; align-items:center; gap:8px;
+}
+.scene-moment::before {
+  content:''; display:block; width:24px; height:1px;
+  background:var(--gold); opacity:0.5;
+}
+
+.scene-title {
+  font-family:'Fraunces',serif;
+  font-size:clamp(22px,2.5vw,30px);
+  font-weight:200; line-height:1.15;
+  letter-spacing:-0.01em; color:var(--ink);
+  margin-bottom:12px;
+}
+.scene-title em { font-style:italic; color:var(--leaf); }
+
+.scene-text {
+  font-size:11px; line-height:1.9;
+  color:rgba(58,32,16,0.6);
+}
+
+.scene-feeling {
+  margin-top:16px;
+  font-family:'Caveat',cursive;
+  font-size:17px; color:var(--terra);
+  display:flex; align-items:center; gap:8px;
+}
+.scene-feeling::before { content:'"'; color:var(--clay); font-size:24px; line-height:1; }
+.scene-feeling::after  { content:'"'; color:var(--clay); font-size:24px; line-height:1; }
+
+/* Credit token badge */
+.credit-badge {
+  display:inline-flex; align-items:center; gap:6px;
+  margin-top:14px; padding:5px 12px;
+  background:rgba(196,154,42,0.1);
+  border:1px solid rgba(196,154,42,0.25);
+  font-size:9px; letter-spacing:0.12em; color:var(--gold);
+}
+
+/* Emotion arc — connector between scenes */
+.arc-connector {
+  width:60px; height:100%;
+  flex-shrink:0;
+  display:flex; align-items:center; justify-content:center;
+  position:relative;
+}
+.arc-line {
+  width:100%; height:2px;
+  background:linear-gradient(to right, var(--warm), var(--sage));
+  position:relative;
+}
+.arc-line::after {
+  content:'→'; position:absolute;
+  right:-8px; top:50%; transform:translateY(-50%);
+  color:var(--sage); font-size:14px;
+}
+.arc-label {
+  position:absolute; top:50%; left:50%;
+  transform:translate(-50%,-150%) rotate(-6deg);
+  font-family:'Caveat',cursive; font-size:13px;
+  color:var(--clay); white-space:nowrap;
+}
+
+/* ── OPENING SCENE — special ── */
+.scene-opening {
+  text-align:center; align-items:center;
+}
+.opening-orbit {
+  font-family:'Fraunces',serif;
+  font-size:clamp(52px,7vw,80px);
+  font-weight:200; line-height:0.9;
+  letter-spacing:-0.03em; color:var(--ink);
+  margin-bottom:8px;
+}
+.opening-orbit em { font-style:italic; color:var(--leaf); }
+.opening-sub {
+  font-family:'Caveat',cursive;
+  font-size:20px; color:var(--clay);
+  margin-bottom:32px;
+}
+.opening-scroll-hint {
+  font-size:9px; letter-spacing:0.2em; text-transform:uppercase;
+  color:var(--sage); display:flex; align-items:center; gap:8px;
+  justify-content:center;
+  animation:hintPulse 2s ease-in-out infinite;
+}
+
+/* ── CLOSING SCENE — special ── */
+.scene-closing {
+  background:linear-gradient(135deg, var(--moss) 0%, var(--leaf) 100%) !important;
+  color:white;
+}
+.scene-closing .scene-title { color:white; }
+.scene-closing .scene-title em { color:var(--mist); }
+.scene-closing .scene-text { color:rgba(255,255,255,0.65); }
+.scene-closing .scene-moment { color:var(--fern); }
+.scene-closing .scene-moment::before { background:var(--fern); }
+.scene-closing .scene-num { color:rgba(255,255,255,0.06); }
+
+/* Transformation stats in closing */
+.transform-stats {
+  display:grid; grid-template-columns:1fr 1fr;
+  gap:8px; margin-top:20px;
+}
+.ts-item {
+  padding:12px; background:rgba(255,255,255,0.08);
+  border:1px solid rgba(255,255,255,0.12);
+}
+.ts-val {
+  font-family:'Fraunces',serif;
+  font-size:24px; color:var(--mist); line-height:1;
+}
+.ts-label { font-size:9px; color:rgba(255,255,255,0.5); margin-top:3px; letter-spacing:0.08em; }
+
+/* Manifesto closing */
+.closing-manifesto {
+  margin-top:24px; padding:20px;
+  background:rgba(255,255,255,0.07);
+  border-left:2px solid var(--fern);
+  font-family:'Fraunces',serif;
+  font-size:14px; font-style:italic;
+  color:rgba(255,255,255,0.7); line-height:1.6;
+}
+
+/* ── EMOTION THREAD ── (top visual thread connecting scenes) */
+.emotion-thread {
+  position:absolute; top:20px; left:0; right:0;
+  height:3px; pointer-events:none;
+}
+
+/* Scene enter animation */
+.scene {
+  opacity:0.4;
+  transition:opacity 0.5s ease;
+}
+.scene.in-view { opacity:1; }
+
+/* ── INLINE SVG ILLUSTRATION STYLES ── */
+.person { fill:var(--terra); }
+.bottle { fill:var(--sky); stroke:rgba(90,160,180,0.5); stroke-width:1; }
+.bottle-cap { fill:var(--clay); }
+.kiosk-body { fill:var(--aged); stroke:var(--warm); stroke-width:1.5; }
+.kiosk-screen { fill:var(--sky); }
+.leaf-shape { fill:var(--fern); }
+.leaf-dark  { fill:var(--leaf); }
+.ground { fill:var(--warm); }
+.heart { fill:var(--coral); }
+.coin { fill:var(--amber); stroke:var(--gold); stroke-width:1; }
+.food-box { fill:var(--mist); stroke:var(--sage); stroke-width:1.5; }
+.house { fill:var(--aged); stroke:var(--clay); stroke-width:1.5; }
+.community-circle { fill:none; stroke:var(--sage); stroke-width:1.5; stroke-dasharray:4,3; }
+.orbit-ring { fill:none; stroke:var(--fern); stroke-width:1; opacity:0.6; }
+.glow-circle { fill:rgba(170,196,122,0.15); }
+.arrow-path { fill:none; stroke:var(--sage); stroke-width:1.5; stroke-linecap:round; }
+.star { fill:var(--amber); }
+
+/* Hand-drawn path feel */
+svg path, svg circle, svg rect, svg ellipse {
+  vector-effect:non-scaling-stroke;
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="story-header">
+  <div class="sh-left">
+    <div class="sh-logo">ORBIT</div>
+    <div class="sh-title">Story Map · The Journey</div>
+  </div>
+  <div class="sh-right">
+    <div class="sh-progress" id="progressDots"></div>
+    <div class="sh-hint">
+      <span class="hint-arrow">←</span>
+      <span>drag to explore</span>
+      <span class="hint-arrow">→</span>
+    </div>
+  </div>
+</header>
+
+<!-- SCROLL TRACK -->
+<div class="scroll-track">
+  <div class="st-track"><div class="st-fill" id="stFill"></div></div>
+</div>
+
+<!-- CANVAS -->
+<div class="canvas" id="canvas">
+  <div class="journey" id="journey">
+
+    <!-- ══ OPENING ══ -->
+    <div class="scene hero scene-opening scene-0 in-view" data-scene="0">
+      <div class="opening-orbit">The<br><em>Journey</em></div>
+      <div class="opening-sub">one bottle · one choice · one community</div>
+      <svg class="illustration-svg" viewBox="0 0 300 160" style="max-width:280px;margin-bottom:16px">
+        <!-- Orbit rings -->
+        <ellipse cx="150" cy="80" rx="130" ry="50" class="orbit-ring" stroke-dasharray="6,4"/>
+        <ellipse cx="150" cy="80" rx="90" ry="35" class="orbit-ring" stroke-dasharray="4,3" opacity="0.5"/>
+        <ellipse cx="150" cy="80" rx="50" ry="20" class="orbit-ring" opacity="0.4"/>
+        <!-- Center glow -->
+        <circle cx="150" cy="80" r="22" class="glow-circle"/>
+        <circle cx="150" cy="80" r="14" fill="var(--leaf)" opacity="0.8"/>
+        <!-- Orbit nodes -->
+        <circle cx="150" cy="30" r="7" fill="var(--sky)" opacity="0.8"/>
+        <circle cx="240" cy="80" r="6" fill="var(--amber)" opacity="0.8"/>
+        <circle cx="150" cy="130" r="7" fill="var(--coral)" opacity="0.8"/>
+        <circle cx="60"  cy="80" r="6" fill="var(--fern)" opacity="0.8"/>
+        <!-- Labels -->
+        <text x="150" y="16" text-anchor="middle" font-family="DM Mono" font-size="7" fill="var(--sky)" letter-spacing="1">RETURN</text>
+        <text x="258" y="83" text-anchor="start"  font-family="DM Mono" font-size="7" fill="var(--amber)" letter-spacing="1">EARN</text>
+        <text x="150" y="148" text-anchor="middle" font-family="DM Mono" font-size="7" fill="var(--coral)" letter-spacing="1">FEED</text>
+        <text x="48"  y="83" text-anchor="end"    font-family="DM Mono" font-size="7" fill="var(--fern)" letter-spacing="1">GIVE</text>
+        <!-- Center label -->
+        <text x="150" y="77" text-anchor="middle" font-family="Fraunces" font-size="8" fill="white" font-style="italic">orbit</text>
+        <text x="150" y="88" text-anchor="middle" font-family="DM Mono" font-size="5" fill="rgba(255,255,255,0.6)" letter-spacing="1">€66.7M</text>
+      </svg>
+      <div class="opening-scroll-hint">
+        <span>←</span> drag or scroll to begin the journey <span>→</span>
+      </div>
+    </div>
+
+    <!-- ── CONNECTOR 1 ── -->
+    <div class="arc-connector">
+      <div class="arc-line"><div class="arc-label">begins</div></div>
+    </div>
+
+    <!-- ══ SCENE 1: The Guilt ══ -->
+    <div class="scene scene-1" data-scene="1">
+      <div class="scene-num">1</div>
+      <div class="scene-illustration">
+        <svg class="illustration-svg" viewBox="0 0 300 180">
+          <!-- Person on couch, bag of bottles -->
+          <!-- Couch -->
+          <rect x="40" y="110" width="200" height="50" rx="8" fill="var(--aged)" stroke="var(--warm)" stroke-width="1.5"/>
+          <rect x="30"  y="95"  width="40" height="70" rx="6" fill="var(--aged)" stroke="var(--warm)" stroke-width="1.5"/>
+          <rect x="210" y="95"  width="40" height="70" rx="6" fill="var(--aged)" stroke="var(--warm)" stroke-width="1.5"/>
+          <!-- Person sitting -->
+          <circle cx="130" cy="85" r="20" fill="var(--terra)" opacity="0.85"/>
+          <rect x="110" y="103" width="40" height="35" rx="5" fill="var(--terra)" opacity="0.75"/>
+          <!-- Bag of bottles -->
+          <ellipse cx="185" cy="115" rx="22" ry="28" fill="rgba(196,168,130,0.4)" stroke="var(--clay)" stroke-width="1.2"/>
+          <rect x="168" y="88"  width="8" height="18" rx="3" class="bottle" opacity="0.9"/>
+          <rect x="180" y="86"  width="8" height="20" rx="3" class="bottle" opacity="0.8"/>
+          <rect x="192" y="89"  width="8" height="17" rx="3" class="bottle" opacity="0.7"/>
+          <!-- Small thought bubble -->
+          <circle cx="160" cy="58" r="3"  fill="var(--clay)" opacity="0.3"/>
+          <circle cx="168" cy="50" r="5"  fill="var(--clay)" opacity="0.25"/>
+          <circle cx="178" cy="42" r="9"  fill="var(--aged)" stroke="var(--warm)" stroke-width="1"/>
+          <text x="178" y="46" text-anchor="middle" font-family="Caveat" font-size="8" fill="var(--terra)">again?</text>
+          <!-- Floor -->
+          <line x1="20" y1="162" x2="280" y2="162" stroke="var(--warm)" stroke-width="1.5"/>
+        </svg>
+      </div>
+      <div class="scene-content">
+        <div class="scene-moment">Initial state</div>
+        <h2 class="scene-title">The small<br><em>guilt of waste</em></h2>
+        <p class="scene-text">Another week ends. The bag by the door has been there since Tuesday. Bottles, cans — things that could be something else. The recycling bin feels like a compromise, not a solution.</p>
+        <div class="scene-feeling">I should do something about this</div>
+      </div>
+    </div>
+
+    <!-- ── CONNECTOR ── -->
+    <div class="arc-connector">
+      <div class="arc-line"><div class="arc-label">then</div></div>
+    </div>
+
+    <!-- ══ SCENE 2: The Kiosk ══ -->
+    <div class="scene scene-2" data-scene="2">
+      <div class="scene-num">2</div>
+      <div class="scene-illustration">
+        <svg class="illustration-svg" viewBox="0 0 300 180">
+          <!-- Background — supermarket hint -->
+          <rect x="0" y="140" width="300" height="40" fill="var(--aged)" opacity="0.4"/>
+          <!-- Kiosk -->
+          <rect x="100" y="40" width="100" height="130" rx="6" class="kiosk-body"/>
+          <rect x="110" y="55"  width="80" height="55" rx="3" class="kiosk-screen"/>
+          <!-- Screen content -->
+          <text x="150" y="75" text-anchor="middle" font-family="Fraunces" font-size="10" fill="white" font-style="italic">Re-turn</text>
+          <text x="150" y="88" text-anchor="middle" font-family="DM Mono" font-size="6" fill="rgba(255,255,255,0.7)" letter-spacing="1">INSERT BOTTLE</text>
+          <rect x="118" y="95" width="64" height="8" rx="2" fill="rgba(255,255,255,0.15)"/>
+          <!-- Slot -->
+          <rect x="120" y="120" width="60" height="12" rx="3" fill="var(--moss)" opacity="0.7"/>
+          <text x="150" y="129" text-anchor="middle" font-family="DM Mono" font-size="6" fill="var(--mist)" letter-spacing="0.5">↓ insert here</text>
+          <!-- ORBIT logo on kiosk -->
+          <circle cx="150" cy="152" r="8" fill="var(--leaf)" opacity="0.8"/>
+          <text x="150" y="156" text-anchor="middle" font-family="Fraunces" font-size="6" fill="white" font-style="italic">O</text>
+          <!-- Person approaching -->
+          <circle cx="55" cy="95"  r="16" fill="var(--terra)" opacity="0.85"/>
+          <rect x="40"  y="109" width="30" height="30" rx="4" fill="var(--terra)" opacity="0.75"/>
+          <!-- Bag -->
+          <ellipse cx="75" cy="125" rx="14" ry="16" fill="rgba(196,168,130,0.5)" stroke="var(--clay)" stroke-width="1"/>
+          <!-- Motion lines -->
+          <line x1="82" y1="112" x2="95" y2="112" stroke="var(--sage)" stroke-width="1" stroke-dasharray="3,2" opacity="0.6"/>
+          <line x1="82" y1="118" x2="98" y2="118" stroke="var(--sage)" stroke-width="1" stroke-dasharray="3,2" opacity="0.4"/>
+          <!-- Floor -->
+          <line x1="20" y1="170" x2="280" y2="170" stroke="var(--warm)" stroke-width="1.5"/>
+        </svg>
+      </div>
+      <div class="scene-content">
+        <div class="scene-moment">First contact</div>
+        <h2 class="scene-title">The kiosk<br><em>is right there</em></h2>
+        <p class="scene-text">On the way home. Dunnes. The Re-turn kiosk glowing quietly at the entrance. The bag is in the bag. Something clicks — this time, actually doing it.</p>
+        <div class="scene-feeling">This is easier than I thought</div>
+        <div class="credit-badge">⊙ 1 EcoCredit per container · 6 today</div>
+      </div>
+    </div>
+
+    <!-- ── CONNECTOR ── -->
+    <div class="arc-connector">
+      <div class="arc-line"><div class="arc-label">discovers</div></div>
+    </div>
+
+    <!-- ══ SCENE 3: The Quiz ══ -->
+    <div class="scene scene-3" data-scene="3">
+      <div class="scene-num">3</div>
+      <div class="scene-illustration">
+        <svg class="illustration-svg" viewBox="0 0 300 180">
+          <!-- Phone -->
+          <rect x="95" y="20" width="110" height="145" rx="12" fill="var(--ink)" opacity="0.85"/>
+          <rect x="100" y="28" width="100" height="130" rx="8" fill="#1a2a10"/>
+          <!-- Screen content — EcoQuiz -->
+          <text x="150" y="48" text-anchor="middle" font-family="Fraunces" font-size="9" fill="var(--fern)" font-style="italic">EcoQuiz</text>
+          <line x1="110" y1="53" x2="190" y2="53" stroke="rgba(170,196,122,0.2)" stroke-width="0.5"/>
+          <!-- Question text -->
+          <rect x="108" y="58" width="84" height="5" rx="2" fill="rgba(170,196,122,0.3)"/>
+          <rect x="108" y="66" width="72" height="5" rx="2" fill="rgba(170,196,122,0.2)"/>
+          <!-- Options -->
+          <rect x="108" y="78"  width="84" height="14" rx="3" fill="rgba(170,196,122,0.08)" stroke="rgba(170,196,122,0.2)" stroke-width="0.5"/>
+          <rect x="108" y="96"  width="84" height="14" rx="3" fill="rgba(74,103,40,0.4)" stroke="rgba(170,196,122,0.4)" stroke-width="0.5"/>
+          <rect x="108" y="114" width="84" height="14" rx="3" fill="rgba(170,196,122,0.08)" stroke="rgba(170,196,122,0.2)" stroke-width="0.5"/>
+          <rect x="108" y="132" width="84" height="14" rx="3" fill="rgba(170,196,122,0.08)" stroke="rgba(170,196,122,0.2)" stroke-width="0.5"/>
+          <!-- Selected indicator -->
+          <circle cx="114" cy="103" r="3" fill="var(--fern)"/>
+          <text x="120" y="106" font-family="DM Mono" font-size="5.5" fill="rgba(200,228,160,0.7)">Regularly, most days</text>
+          <!-- Progress bar at top -->
+          <rect x="108" y="155" width="84" height="2" rx="1" fill="rgba(170,196,122,0.15)"/>
+          <rect x="108" y="155" width="42" height="2" rx="1" fill="var(--fern)"/>
+          <!-- Radar preview faint -->
+          <polygon points="150,62 160,72 156,84 144,84 140,72" fill="rgba(170,196,122,0.1)" stroke="rgba(170,196,122,0.3)" stroke-width="0.5"/>
+          <!-- Hand holding phone -->
+          <ellipse cx="150" cy="174" rx="28" ry="9" fill="var(--terra)" opacity="0.6"/>
+        </svg>
+      </div>
+      <div class="scene-content">
+        <div class="scene-moment">Self-discovery</div>
+        <h2 class="scene-title">The quiz that<br><em>sees you clearly</em></h2>
+        <p class="scene-text">18 questions. 9 dimensions of daily life. Not judged — mapped. The radar chart appears and it's a portrait: where you're already living it, and where the journey continues.</p>
+        <div class="scene-feeling">It knows where I actually am</div>
+        <div class="credit-badge">⊙ Resonance Level unlocked · High</div>
+      </div>
+    </div>
+
+    <!-- ── CONNECTOR ── -->
+    <div class="arc-connector">
+      <div class="arc-line"><div class="arc-label">chooses</div></div>
+    </div>
+
+    <!-- ══ SCENE 4: The Purchase ══ -->
+    <div class="scene scene-4" data-scene="4">
+      <div class="scene-num">4</div>
+      <div class="scene-illustration">
+        <svg class="illustration-svg" viewBox="0 0 300 180">
+          <!-- Market stall feeling -->
+          <rect x="20" y="60" width="260" height="90" rx="4" fill="rgba(196,168,130,0.15)" stroke="var(--warm)" stroke-width="1"/>
+          <!-- Produce items -->
+          <!-- Cabbage/veg -->
+          <circle cx="60"  cy="95" r="18" fill="var(--fern)" opacity="0.8"/>
+          <circle cx="60"  cy="95" r="12" fill="var(--sage)" opacity="0.7"/>
+          <text x="60"  y="122" text-anchor="middle" font-family="DM Mono" font-size="6" fill="var(--terra)">local</text>
+          <!-- Bread/grains -->
+          <ellipse cx="130" cy="95" rx="20" ry="14" fill="var(--amber)" opacity="0.7"/>
+          <text x="130" y="118" text-anchor="middle" font-family="DM Mono" font-size="6" fill="var(--terra)">organic</text>
+          <!-- Bottle / drinks -->
+          <rect x="180" y="78" width="14" height="32" rx="5" class="bottle" opacity="0.8"/>
+          <text x="187" y="122" text-anchor="middle" font-family="DM Mono" font-size="6" fill="var(--terra)">Irish</text>
+          <!-- Label tag -->
+          <rect x="215" y="75" width="50" height="28" rx="3" fill="var(--mist)" stroke="var(--sage)" stroke-width="1"/>
+          <text x="240" y="86"  text-anchor="middle" font-family="DM Mono" font-size="5.5" fill="var(--moss)" letter-spacing="0.5">QUALIFIES</text>
+          <text x="240" y="94"  text-anchor="middle" font-family="Fraunces" font-size="10" fill="var(--leaf)">×3</text>
+          <text x="240" y="101" text-anchor="middle" font-family="DM Mono" font-size="5" fill="var(--sage)" letter-spacing="0.5">EcoCredits</text>
+          <!-- Stars / sparkle -->
+          <text x="258" y="68" font-family="DM Mono" font-size="12" fill="var(--amber)" opacity="0.8">✦</text>
+          <text x="36"  y="55" font-family="DM Mono" font-size="8"  fill="var(--fern)" opacity="0.6">✦</text>
+          <text x="148" y="52" font-family="DM Mono" font-size="10" fill="var(--amber)" opacity="0.5">✦</text>
+          <!-- Person's hand with basket -->
+          <ellipse cx="90" cy="155" rx="22" ry="8" fill="var(--terra)" opacity="0.5"/>
+          <path d="M70,140 Q90,130 110,140" fill="none" stroke="var(--terra)" stroke-width="6" stroke-linecap="round" opacity="0.6"/>
+          <!-- Notification ping on phone -->
+          <rect x="190" y="130" width="80" height="30" rx="5" fill="rgba(46,61,24,0.85)"/>
+          <text x="230" y="142" text-anchor="middle" font-family="DM Mono" font-size="5.5" fill="var(--fern)" letter-spacing="0.5">ORBIT</text>
+          <text x="230" y="153" text-anchor="middle" font-family="Caveat" font-size="9" fill="rgba(200,228,160,0.8)">+54 EcoCredits ✓</text>
+        </svg>
+      </div>
+      <div class="scene-content">
+        <div class="scene-moment">Behaviour shift</div>
+        <h2 class="scene-title">One different<br><em>choice at the market</em></h2>
+        <p class="scene-text">The Happy Pear's seasonal produce. Irish. Organic. Package-free. It costs the same. But this time, ORBIT sees it — and the credits multiply. The phone buzzes. Something changed.</p>
+        <div class="scene-feeling">That felt different. Good different.</div>
+        <div class="credit-badge">⊙ ×3 multiplier · Gold Partner · +54 credits</div>
+      </div>
+    </div>
+
+    <!-- ── CONNECTOR ── -->
+    <div class="arc-connector">
+      <div class="arc-line"><div class="arc-label">sees</div></div>
+    </div>
+
+    <!-- ══ SCENE 5: The Community ══ -->
+    <div class="scene wide scene-5" data-scene="5">
+      <div class="scene-num">5</div>
+      <div class="scene-illustration">
+        <svg class="illustration-svg" viewBox="0 0 420 180" style="max-width:400px">
+          <!-- Community pulse map — Dublin dots -->
+          <!-- Background map hint -->
+          <ellipse cx="210" cy="100" rx="180" ry="70" fill="rgba(196,168,130,0.1)" stroke="rgba(196,168,130,0.2)" stroke-width="1"/>
+          <!-- Activity nodes — scattered across Dublin -->
+          <circle cx="210" cy="90"  r="28" fill="rgba(170,196,122,0.08)" stroke="rgba(170,196,122,0.2)" stroke-width="1"/>
+          <!-- Person dots with names -->
+          <!-- Aoife -->
+          <circle cx="155" cy="78" r="7" fill="var(--fern)" opacity="0.9"/>
+          <circle cx="155" cy="78" r="12" fill="rgba(170,196,122,0.15)" class="community-circle"/>
+          <text x="155" y="65" text-anchor="middle" font-family="Caveat" font-size="11" fill="var(--moss)">Aoife</text>
+          <text x="155" y="98" text-anchor="middle" font-family="DM Mono" font-size="5.5" fill="var(--sage)">6 bottles ↑</text>
+          <!-- Ciarán -->
+          <circle cx="230" cy="95" r="7" fill="var(--amber)" opacity="0.9"/>
+          <circle cx="230" cy="95" r="12" fill="rgba(232,176,64,0.12)" class="community-circle"/>
+          <text x="230" y="82" text-anchor="middle" font-family="Caveat" font-size="11" fill="var(--moss)">Ciarán</text>
+          <text x="230" y="115" text-anchor="middle" font-family="DM Mono" font-size="5.5" fill="var(--sage)">FoodPack ✓</text>
+          <!-- Saoirse -->
+          <circle cx="180" cy="118" r="7" fill="var(--coral)" opacity="0.9"/>
+          <circle cx="180" cy="118" r="12" fill="rgba(196,90,58,0.1)" class="community-circle"/>
+          <text x="180" y="138" text-anchor="middle" font-family="Caveat" font-size="11" fill="var(--moss)">Saoirse</text>
+          <text x="180" y="108" text-anchor="middle" font-family="DM Mono" font-size="5.5" fill="var(--sage)">donated ❤</text>
+          <!-- Donal -->
+          <circle cx="270" cy="72"  r="6" fill="var(--sky)" opacity="0.85"/>
+          <text x="270" y="60" text-anchor="middle" font-family="Caveat" font-size="10" fill="var(--moss)">Donal</text>
+          <!-- Mairéad -->
+          <circle cx="140" cy="120" r="6" fill="var(--plum)" opacity="0.8"/>
+          <text x="140" y="138" text-anchor="middle" font-family="Caveat" font-size="10" fill="var(--moss)">Mairéad</text>
+          <!-- Connecting lines -->
+          <line x1="155" y1="78" x2="210" y2="90" stroke="rgba(170,196,122,0.25)" stroke-width="1" stroke-dasharray="3,3"/>
+          <line x1="230" y1="95" x2="210" y2="90" stroke="rgba(170,196,122,0.25)" stroke-width="1" stroke-dasharray="3,3"/>
+          <line x1="180" y1="118" x2="210" y2="90" stroke="rgba(170,196,122,0.25)" stroke-width="1" stroke-dasharray="3,3"/>
+          <!-- Center: YOU -->
+          <circle cx="210" cy="90" r="10" fill="var(--leaf)"/>
+          <text x="210" y="94" text-anchor="middle" font-family="DM Mono" font-size="6" fill="white" letter-spacing="0.5">YOU</text>
+          <!-- Counter badge top right -->
+          <rect x="310" y="40" width="95" height="50" rx="5" fill="var(--aged)" stroke="var(--warm)" stroke-width="1"/>
+          <text x="357" y="56" text-anchor="middle" font-family="DM Mono" font-size="7" fill="var(--gold)" letter-spacing="1">THIS WEEK</text>
+          <text x="357" y="72" text-anchor="middle" font-family="Fraunces" font-size="22" fill="var(--leaf)">2,847</text>
+          <text x="357" y="83" text-anchor="middle" font-family="DM Mono" font-size="6" fill="var(--sage)">containers returned</text>
+          <!-- Floor -->
+          <line x1="20" y1="168" x2="400" y2="168" stroke="var(--warm)" stroke-width="1"/>
+        </svg>
+      </div>
+      <div class="scene-content">
+        <div class="scene-moment">Solidarity revealed</div>
+        <h2 class="scene-title">The invisible<br><em>community appears</em></h2>
+        <p class="scene-text">The community pulse. Aoife returned 6 bottles in Rathmines. Ciarán redeemed a FoodPack. Saoirse donated to the Capuchin Day Centre. 2,847 containers this week in Dublin alone. You were never doing this alone.</p>
+        <div class="scene-feeling">There are thousands of us doing this</div>
+      </div>
+    </div>
+
+    <!-- ── CONNECTOR ── -->
+    <div class="arc-connector">
+      <div class="arc-line"><div class="arc-label">decides</div></div>
+    </div>
+
+    <!-- ══ SCENE 6: The Donation ══ -->
+    <div class="scene scene-6" data-scene="6">
+      <div class="scene-num">6</div>
+      <div class="scene-illustration">
+        <svg class="illustration-svg" viewBox="0 0 300 180">
+          <!-- EcoWallet on phone -->
+          <rect x="80" y="15" width="90" height="140" rx="10" fill="var(--ink)" opacity="0.9"/>
+          <rect x="84" y="22" width="82" height="126" rx="7" fill="#1e2710"/>
+          <!-- Wallet card mini -->
+          <rect x="90" y="28" width="70" height="42" rx="5" fill="var(--leaf)" opacity="0.8"/>
+          <text x="125" y="44" text-anchor="middle" font-family="Fraunces" font-size="14" fill="white" font-weight="200">847</text>
+          <text x="125" y="55" text-anchor="middle" font-family="DM Mono" font-size="5" fill="rgba(255,255,255,0.5)" letter-spacing="1">ECOCREDITS</text>
+          <circle cx="153" cy="66" r="6" fill="var(--fern)" opacity="0.6"/>
+          <!-- Mode toggle -->
+          <text x="125" y="84" text-anchor="middle" font-family="DM Mono" font-size="5.5" fill="rgba(200,228,160,0.5)" letter-spacing="0.5">DONATE MODE</text>
+          <rect x="92" y="88" width="66" height="16" rx="8" fill="var(--coral)" opacity="0.8"/>
+          <text x="125" y="99" text-anchor="middle" font-family="DM Mono" font-size="5.5" fill="white" letter-spacing="0.5">❤ DONATE ALL</text>
+          <!-- Confirmation -->
+          <rect x="92" y="110" width="66" height="28" rx="3" fill="rgba(170,196,122,0.1)" stroke="rgba(170,196,122,0.2)" stroke-width="0.5"/>
+          <text x="125" y="122" text-anchor="middle" font-family="Caveat" font-size="9" fill="var(--fern)">Capuchin Day</text>
+          <text x="125" y="132" text-anchor="middle" font-family="Caveat" font-size="9" fill="var(--fern)">Centre ✓</text>
+          <!-- Arrow from phone to destination -->
+          <path d="M175,85 C200,85 210,100 220,110" class="arrow-path" stroke-dasharray="4,3"/>
+          <polygon points="218,106 224,112 212,112" fill="var(--sage)"/>
+          <!-- House / community hub destination -->
+          <rect x="220" y="108" width="60" height="45" rx="3" class="house"/>
+          <polygon points="220,108 280,108 250,80" fill="var(--aged)" stroke="var(--clay)" stroke-width="1.5"/>
+          <rect x="238" y="125" width="24" height="28" rx="2" fill="var(--sky)" opacity="0.5"/>
+          <!-- Heart floating -->
+          <text x="248" y="144" font-size="12" text-anchor="middle">❤️</text>
+          <!-- Food box -->
+          <rect x="228" y="148" width="40" height="20" rx="3" class="food-box"/>
+          <text x="248" y="162" text-anchor="middle" font-family="DM Mono" font-size="6" fill="var(--moss)">FoodPack</text>
+          <!-- Floor -->
+          <line x1="20" y1="173" x2="280" y2="173" stroke="var(--warm)" stroke-width="1"/>
+        </svg>
+      </div>
+      <div class="scene-content">
+        <div class="scene-moment">Generosity made simple</div>
+        <h2 class="scene-title">Credits become<br><em>someone's meal</em></h2>
+        <p class="scene-text">Switch to donate mode. 847 credits flow to the Capuchin Day Centre — no bureaucracy, no form to fill. A FoodPack appears at a community hub. No app needed on the other end. Solidarity with zero friction.</p>
+        <div class="scene-feeling">This is what the circular economy actually means</div>
+        <div class="credit-badge">⊙ 847 credits → 12 meals today</div>
+      </div>
+    </div>
+
+    <!-- ── CONNECTOR ── -->
+    <div class="arc-connector">
+      <div class="arc-line"><div class="arc-label">becomes</div></div>
+    </div>
+
+    <!-- ══ SCENE 7: The Policy ══ -->
+    <div class="scene scene-7" data-scene="7">
+      <div class="scene-num">7</div>
+      <div class="scene-illustration">
+        <svg class="illustration-svg" viewBox="0 0 300 180">
+          <!-- Government building hint -->
+          <rect x="90" y="70" width="120" height="90" fill="var(--aged)" stroke="var(--warm)" stroke-width="1.5"/>
+          <!-- Columns -->
+          <rect x="100" y="75" width="8" height="85" fill="var(--warm)" opacity="0.8"/>
+          <rect x="118" y="75" width="8" height="85" fill="var(--warm)" opacity="0.8"/>
+          <rect x="136" y="75" width="8" height="85" fill="var(--warm)" opacity="0.8"/>
+          <rect x="154" y="75" width="8" height="85" fill="var(--warm)" opacity="0.8"/>
+          <rect x="172" y="75" width="8" height="85" fill="var(--warm)" opacity="0.8"/>
+          <rect x="190" y="75" width="8" height="85" fill="var(--warm)" opacity="0.8"/>
+          <!-- Pediment -->
+          <polygon points="85,70 215,70 150,45" fill="var(--aged)" stroke="var(--warm)" stroke-width="1.5"/>
+          <!-- Document -->
+          <rect x="130" y="100" width="40" height="50" rx="2" fill="white" stroke="var(--clay)" stroke-width="1"/>
+          <rect x="134" y="106" width="32" height="3" rx="1" fill="var(--leaf)" opacity="0.6"/>
+          <rect x="134" y="112" width="28" height="2" rx="1" fill="var(--warm)"/>
+          <rect x="134" y="117" width="30" height="2" rx="1" fill="var(--warm)"/>
+          <rect x="134" y="122" width="26" height="2" rx="1" fill="var(--warm)"/>
+          <text x="150" y="137" text-anchor="middle" font-family="Fraunces" font-size="8" fill="var(--amber)" font-style="italic">€66.7M</text>
+          <text x="150" y="146" text-anchor="middle" font-family="DM Mono" font-size="4.5" fill="var(--sage)" letter-spacing="0.5">public good fund</text>
+          <!-- Data stream feeding in -->
+          <path d="M30,90 Q60,60 90,90" fill="none" stroke="var(--fern)" stroke-width="1.5" stroke-dasharray="3,2"/>
+          <path d="M30,100 Q55,75 90,100" fill="none" stroke="var(--amber)" stroke-width="1" stroke-dasharray="2,3" opacity="0.6"/>
+          <path d="M30,110 Q60,95 90,110" fill="none" stroke="var(--sky)" stroke-width="1" stroke-dasharray="2,3" opacity="0.5"/>
+          <!-- Data labels -->
+          <text x="18" y="88"  font-family="DM Mono" font-size="5.5" fill="var(--sage)">behaviour</text>
+          <text x="18" y="101" font-family="DM Mono" font-size="5.5" fill="var(--gold)">deposits</text>
+          <text x="18" y="113" font-family="DM Mono" font-size="5.5" fill="var(--sky)">impact</text>
+          <!-- Gavel hint -->
+          <rect x="220" y="120" width="30" height="8" rx="2" fill="var(--terra)" opacity="0.7" transform="rotate(-30 235 124)"/>
+          <rect x="226" y="108" width="8" height="22" rx="2" fill="var(--clay)" opacity="0.6" transform="rotate(-30 230 119)"/>
+          <!-- Floor -->
+          <line x1="20" y1="165" x2="280" y2="165" stroke="var(--warm)" stroke-width="1.5"/>
+          <!-- Stars -->
+          <text x="248" y="70" font-size="10" fill="var(--amber)" opacity="0.7">✦</text>
+          <text x="60"  y="55" font-size="8"  fill="var(--fern)" opacity="0.6">✦</text>
+        </svg>
+      </div>
+      <div class="scene-content">
+        <div class="scene-moment">Systemic change</div>
+        <h2 class="scene-title">Your data becomes<br><em>a democratic argument</em></h2>
+        <p class="scene-text">Thousands of journeys like yours, anonymised and aggregated, become ORBIT's report to Government and Re-turn Ireland: this €66.7M belongs to the communities that generated it. One person's bottle. One nation's policy.</p>
+        <div class="scene-feeling">I helped change something bigger than me</div>
+      </div>
+    </div>
+
+    <!-- ── CONNECTOR ── -->
+    <div class="arc-connector">
+      <div class="arc-line"><div class="arc-label">arrives</div></div>
+    </div>
+
+    <!-- ══ SCENE 8: TRANSFORMED STATE ══ -->
+    <div class="scene wide scene-closing scene-8" data-scene="8">
+      <div class="scene-num" style="color:rgba(255,255,255,0.06)">8</div>
+      <div class="scene-illustration">
+        <svg class="illustration-svg" viewBox="0 0 400 180" style="max-width:380px">
+          <!-- Person transformed — standing tall, nature around them -->
+          <!-- Tree / nature -->
+          <circle cx="60"  cy="100" r="35" fill="rgba(170,196,122,0.3)"/>
+          <circle cx="60"  cy="85"  r="28" fill="rgba(170,196,122,0.4)"/>
+          <rect   x="55"   y="120"  width="10" height="40" fill="var(--terra)" opacity="0.5"/>
+          <circle cx="340" cy="95"  r="30" fill="rgba(170,196,122,0.25)"/>
+          <circle cx="340" cy="82"  r="22" fill="rgba(170,196,122,0.35)"/>
+          <rect   x="336"  y="112"  width="8" height="40" fill="var(--terra)" opacity="0.4"/>
+          <!-- Person — centre, arms wide -->
+          <circle cx="200" cy="65" r="22" fill="rgba(255,255,255,0.9)"/>
+          <rect   x="180" cy="85" width="40" height="45" rx="6" fill="rgba(255,255,255,0.8)"/>
+          <!-- Arms wide — transformed -->
+          <line x1="180" y1="100" x2="145" y2="88" stroke="rgba(255,255,255,0.8)" stroke-width="6" stroke-linecap="round"/>
+          <line x1="220" y1="100" x2="255" y2="88" stroke="rgba(255,255,255,0.8)" stroke-width="6" stroke-linecap="round"/>
+          <!-- Orbit rings around person -->
+          <ellipse cx="200" cy="100" rx="60" ry="25" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="1" stroke-dasharray="4,3"/>
+          <ellipse cx="200" cy="100" rx="90" ry="38" fill="none" stroke="rgba(255,255,255,0.12)" stroke-width="1" stroke-dasharray="3,4"/>
+          <!-- Floating elements -->
+          <text x="130" y="52" font-size="16" text-anchor="middle">🥬</text>
+          <text x="270" y="52" font-size="16" text-anchor="middle">🍾</text>
+          <text x="155" y="160" font-size="14" text-anchor="middle">❤️</text>
+          <text x="248" y="158" font-size="14" text-anchor="middle">🌍</text>
+          <!-- Stars scattered -->
+          <text x="105" y="44" font-size="12" fill="rgba(255,255,255,0.6)">✦</text>
+          <text x="290" y="42" font-size="10" fill="rgba(255,255,255,0.5)">✦</text>
+          <text x="200" y="30" font-size="14" fill="rgba(255,255,255,0.4)">✦</text>
+          <!-- Floor — earth -->
+          <ellipse cx="200" cy="162" rx="150" ry="12" fill="rgba(255,255,255,0.08)"/>
+        </svg>
+      </div>
+      <div class="scene-content">
+        <div class="scene-moment" style="color:var(--fern)">Transformed state</div>
+        <h2 class="scene-title">Not just a recycler.<br><em>A participant.</em></h2>
+        <p class="scene-text" style="color:rgba(255,255,255,0.6)">The journey ends here — and begins again. Each return, each qualifying purchase, each donation is one more rotation of the same beautiful loop. The circular economy isn't an abstraction. It's this. You. Here. Now.</p>
+
+        <div class="transform-stats">
+          <div class="ts-item"><div class="ts-val">312</div><div class="ts-label">containers returned</div></div>
+          <div class="ts-item"><div class="ts-val">18</div><div class="ts-label">FoodPacks redeemed</div></div>
+          <div class="ts-item"><div class="ts-val">215⊙</div><div class="ts-label">credits donated</div></div>
+          <div class="ts-item"><div class="ts-val">47kg</div><div class="ts-label">CO₂ saved</div></div>
+        </div>
+
+        <div class="closing-manifesto" style="display:none"></div>
+      </div>
+    </div>
+
+    <!-- End padding -->
+    <div style="width:80px;flex-shrink:0"></div>
+
+  </div><!-- end journey -->
+</div><!-- end canvas -->
+
+<script>
+// ── Build progress dots ──
+const scenes = document.querySelectorAll('[data-scene]');
+const dotsWrap = document.getElementById('progressDots');
+scenes.forEach((s, i) => {
+  const d = document.createElement('div');
+  d.className = 'sp-dot' + (i===0 ? ' current' : '');
+  d.id = 'dot'+i;
+  dotsWrap.appendChild(d);
+});
+
+// ── Drag to scroll ──
+const canvas  = document.getElementById('canvas');
+const journey = document.getElementById('journey');
+const fill    = document.getElementById('stFill');
+
+let isDragging = false;
+let startX = 0;
+let scrollX = 0;
+let currentX = 0;
+let velocity = 0;
+let lastX = 0;
+let rafId = null;
+
+const totalWidth = () => journey.scrollWidth - canvas.offsetWidth;
+
+function setTranslate(x) {
+  const clamped = Math.max(0, Math.min(totalWidth(), x));
+  journey.style.transform = `translateX(-${clamped}px)`;
+  currentX = clamped;
+  fill.style.width = Math.round((clamped / totalWidth()) * 100) + '%';
+  updateSceneVisibility(clamped);
+}
+
+function updateSceneVisibility(x) {
+  const w = canvas.offsetWidth;
+  scenes.forEach((scene, i) => {
+    const rect = scene.getBoundingClientRect();
+    const inView = rect.left < w * 1.1 && rect.right > -w * 0.1;
+    scene.classList.toggle('in-view', inView);
+  });
+
+  // Update progress dots
+  let currentScene = 0;
+  scenes.forEach((scene, i) => {
+    const sceneX = scene.offsetLeft;
+    if (x + w * 0.4 > sceneX) currentScene = i;
+  });
+  document.querySelectorAll('.sp-dot').forEach((d, i) => {
+    d.className = 'sp-dot' + (i < currentScene ? ' reached' : i === currentScene ? ' current' : '');
+  });
+}
+
+// Mouse drag
+canvas.addEventListener('mousedown', e => {
+  isDragging = true;
+  startX = e.clientX;
+  scrollX = currentX;
+  lastX = e.clientX;
+  velocity = 0;
+  document.body.classList.add('grabbing');
+  cancelAnimationFrame(rafId);
+});
+
+window.addEventListener('mousemove', e => {
+  if (!isDragging) return;
+  velocity = e.clientX - lastX;
+  lastX = e.clientX;
+  const dx = startX - e.clientX;
+  setTranslate(scrollX + dx);
+});
+
+window.addEventListener('mouseup', () => {
+  if (!isDragging) return;
+  isDragging = false;
+  document.body.classList.remove('grabbing');
+  // Momentum
+  let v = -velocity * 1.5;
+  function coast() {
+    if (Math.abs(v) < 0.5) return;
+    setTranslate(currentX + v);
+    v *= 0.92;
+    rafId = requestAnimationFrame(coast);
+  }
+  coast();
+});
+
+// Touch
+canvas.addEventListener('touchstart', e => {
+  startX = e.touches[0].clientX;
+  scrollX = currentX;
+  lastX = startX;
+  velocity = 0;
+  cancelAnimationFrame(rafId);
+}, { passive:true });
+
+canvas.addEventListener('touchmove', e => {
+  velocity = e.touches[0].clientX - lastX;
+  lastX = e.touches[0].clientX;
+  const dx = startX - e.touches[0].clientX;
+  setTranslate(scrollX + dx);
+}, { passive:true });
+
+canvas.addEventListener('touchend', () => {
+  let v = -velocity * 1.8;
+  function coast() {
+    if (Math.abs(v) < 0.5) return;
+    setTranslate(currentX + v);
+    v *= 0.90;
+    rafId = requestAnimationFrame(coast);
+  }
+  coast();
+});
+
+// Wheel scroll
+canvas.addEventListener('wheel', e => {
+  e.preventDefault();
+  setTranslate(currentX + e.deltaY + e.deltaX);
+}, { passive:false });
+
+// Keyboard
+window.addEventListener('keydown', e => {
+  if (e.key === 'ArrowRight') setTranslate(currentX + 300);
+  if (e.key === 'ArrowLeft')  setTranslate(currentX - 300);
+});
+
+// Init
+setTranslate(0);
+</script>
+</body>
+</html>
